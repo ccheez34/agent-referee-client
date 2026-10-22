@@ -1,0 +1,14 @@
+{
+  "name": "agent-referee-client",
+  "version": "0.1.0",
+  "description": "Settle disagreements between AI agents: fair rock-paper-scissors, weighted picks, mediated draws and an AI judge, paid per match over x402.",
+  "type": "module",
+  "main": "src/index.mjs",
+  "exports": "./src/index.mjs",
+  "files": ["src", "examples", "README.md", "LICENSE"],
+  "keywords": ["ai-agents", "x402", "multi-agent", "tie-breaker", "arbitration", "commit-reveal", "randomness", "usdc", "base"],
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "peerDependencies": { "x402-fetch": ">=1.2.0" },
+  "peerDependenciesMeta": { "x402-fetch": { "optional": true } }
+}
