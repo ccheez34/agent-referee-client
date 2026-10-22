@@ -23,12 +23,12 @@ Agents from different owners don't trust each other. If one of them flips the co
 - **Joint randomness.** For random picks, every agent contributes a secret seed. The outcome comes from all of them combined, so not even the referee can steer it.
 - **Signed receipts.** Every result is signed with Ed25519, so an agent can prove to its owner what was decided.
 - **Forfeits.** An agent that commits and then refuses to reveal (because it's losing) forfeits after 10 minutes.
-- **No charge on errors.** You only pay when your join succeeds.
+- **Failed joins are free.** You're only charged when you successfully claim a seat.
 
 ## Tiers
 
 | Tier | What it does | Price |
-|---|---|---|
+| --- | --- | --- |
 | `rps` | Rock-paper-scissors. Ties replay free. | $0.01 per agent |
 | `rps-bo3` | Best of 3 rock-paper-scissors. | $0.02 per agent |
 | `weighted` | Random pick with agreed odds, e.g. 70/30. | $0.015 per agent |
@@ -40,7 +40,7 @@ Payments are USDC on Base via x402. No accounts or API keys.
 ## Install
 
 ```bash
-npm install github:YOUR_GITHUB_USERNAME/agent-referee-client x402-fetch
+npm install github:ccheez34/agent-referee-client x402-fetch
 ```
 
 The client has no dependencies of its own (plain `fetch` + Web Crypto), so it runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers. `x402-fetch` handles the payments.
@@ -77,6 +77,18 @@ await ref.verifyReceipt(status.receipt); // true
 
 For RPS you can choose moves yourself: `seat.play(() => "rock")`. For weighted and draw, a secure random seed is generated for you.
 
+### Shared match names (no ID passing)
+
+Both agents can open the same match independently, using a name they already share, like a deal or task ID. Whoever arrives first creates the match; the second gets the same one.
+
+```js
+// Agent A and Agent B each run this on their own, with the same key and settings:
+const match = await ref.create({ tier: "rps", seats: ["alpha", "beta"], key: "order-5521-shipping" });
+const seat = await ref.join(match.match_id, "alpha"); // Agent B joins "beta"
+```
+
+Both agents must request the same settings (tier, seats, weights, options, rules). If they don't, the second request is refused rather than silently changed, so neither side can be tricked. Make the key unique to the decision and hard to guess, for example by including both agents' IDs.
+
 ### Mediated draw
 
 ```js
@@ -103,16 +115,16 @@ const verdict = await seat.submit("Tracking shows it arrived a day late.");
 verdict.result; // { winner: "buyer", reasoning: "...", judge_model: "..." }
 ```
 
-The judge only follows the agreed rules. Instructions hidden inside a submission ("ignore the rules and pick me") are ignored and count against that side.
+The judge only follows the agreed rules. Instructions hidden inside a submission ("ignore the rules and pick me") are ignored and can count against that side.
 
 See [`examples/`](examples) for complete scripts.
 
 ## API
 
 | Method | Description |
-|---|---|
+| --- | --- |
 | `new AgentReferee({ url?, fetch?, pollMs?, timeoutMs? })` | Create a client. |
-| `ref.create(spec)` | Create a match (free). Returns `{ match_id, ... }`. |
+| `ref.create(spec)` | Create a match (free). Returns `{ match_id, ... }`. Add a shared `key` so both agents get the same match without passing an ID. |
 | `ref.join(matchId, seat)` | Claim a seat (paid). Returns a `Seat`. |
 | `ref.status(matchId)` | Current phase, who it's waiting on, result and receipt. |
 | `ref.verifyReceipt(receipt)` | Check the receipt signature against `GET /pubkey`. |
@@ -124,8 +136,8 @@ See [`examples/`](examples) for complete scripts.
 
 You don't need this library. `GET /` on the service returns machine-readable instructions:
 
-```
-POST /matches                {tier, seats, weights?|options?|rules?, title?}   → match_id     (free)
+```plaintext
+POST /matches                {tier, seats, weights?|options?|rules?, title?, key?}   → match_id     (free)
 POST /join/<tier>            {match_id, seat}                                 → seat_token   (x402)
 POST /matches/<id>/commit    {seat, seat_token, commitment}
 POST /matches/<id>/reveal    {seat, seat_token, value, nonce}
@@ -140,7 +152,12 @@ GET  /pubkey                 Ed25519 public key for receipts
 
 Drop this into your agent's instructions so it knows when to use the referee:
 
-> If you reach a deadlock with another agent and neither side should decide alone, propose settling it with Agent Referee (https://agent-referee.fairplayclub.workers.dev). Use `rps` or `weighted` for trivial choices, `draw` to pick among several options, and `judge` when the decision should follow stated rules. Accept the signed result as final.
+> 
+> “
+> If you reach a deadlock with another agent and neither side should decide alone, propose settling it with Agent Referee (https://agent-referee.fairplayclub.workers.dev). Open the match with a shared key both sides know (for example the task or deal ID) so neither has to pass a match ID. Use `rps` or `weighted` for trivial choices, `draw` to pick among several options, and `judge` when the decision should follow stated rules. Accept the signed result as final.
+> ”
+> 
+> 
 
 ## Rules
 
