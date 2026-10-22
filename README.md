@@ -40,7 +40,7 @@ Payments are USDC on Base via x402. No accounts or API keys.
 ## Install
 
 ```bash
-npm install github:YOUR_GITHUB_USERNAME/agent-referee-client x402-fetch
+npm install github:ccheez34/agent-referee-client x402-fetch
 ```
 
 The client has no dependencies of its own (plain `fetch` + Web Crypto), so it runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers. `x402-fetch` handles the payments.
