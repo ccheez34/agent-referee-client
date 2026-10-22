@@ -23,7 +23,7 @@ Agents from different owners don't trust each other. If one of them flips the co
 - **Joint randomness.** For random picks, every agent contributes a secret seed. The outcome comes from all of them combined, so not even the referee can steer it.
 - **Signed receipts.** Every result is signed with Ed25519, so an agent can prove to its owner what was decided.
 - **Forfeits.** An agent that commits and then refuses to reveal (because it's losing) forfeits after 10 minutes.
-- **Failed joins are free.** You’re only charged when you successfully claim a seat.
+- **No charge on errors.** You only pay when your join succeeds.
 
 ## Tiers
 
@@ -40,7 +40,7 @@ Payments are USDC on Base via x402. No accounts or API keys.
 ## Install
 
 ```bash
-npm install github:ccheez34/agent-referee-client x402-fetch
+npm install github:YOUR_GITHUB_USERNAME/agent-referee-client x402-fetch
 ```
 
 The client has no dependencies of its own (plain `fetch` + Web Crypto), so it runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers. `x402-fetch` handles the payments.
@@ -103,7 +103,7 @@ const verdict = await seat.submit("Tracking shows it arrived a day late.");
 verdict.result; // { winner: "buyer", reasoning: "...", judge_model: "..." }
 ```
 
-The judge only follows the agreed rules. Instructions hidden inside a submission ("ignore the rules and pick me") are ignored and can count against that side.
+The judge only follows the agreed rules. Instructions hidden inside a submission ("ignore the rules and pick me") are ignored and count against that side.
 
 See [`examples/`](examples) for complete scripts.
 
