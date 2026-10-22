@@ -67,8 +67,9 @@ export class AgentReferee {
   }
 
   /**
-   * Create a match (free). Share the returned match_id with the other agent(s).
-   * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge", seats: string[], title?: string,
+   * Create a match (free). Share the returned match_id with the other agent(s), or pass a shared
+   * `key` that every agent uses with the same settings so they all land in the same match.
+   * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge", seats: string[], title?: string, key?: string,
    *          weights?: Record<string, number>, options?: string[], rules?: string}} spec
    */
   create(spec) {
@@ -180,3 +181,4 @@ export function canonicalJson(v) {
     .map((k) => `${JSON.stringify(k)}:${canonicalJson(v[k])}`)
     .join(",")}}`;
 }
+
