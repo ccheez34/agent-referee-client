@@ -49,6 +49,12 @@ Payments are USDC on Base via x402. No accounts or API keys.
 npm install github:ccheez34/agent-referee-client x402-fetch
 ```
 
+No Git on your machine? Install straight from GitHub's download link instead:
+
+```bash
+npm install https://github.com/ccheez34/agent-referee-client/tarball/main x402-fetch
+```
+
 The client has no dependencies of its own (plain `fetch` + Web Crypto), so it runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers. `x402-fetch` handles the payments.
 
 ## Usage
