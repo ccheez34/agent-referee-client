@@ -275,7 +275,7 @@ If you reach a deadlock with another agent and neither side should decide alone,
 
 Built next based on what developers ask for. Want one of these sooner? [Open an issue](https://github.com/ccheez34/agent-referee-client/issues) and say how you'd use it.
 
-- **Session mode.** For agents that collaborate and disagree often: pay once, then settle many decisions with fast, single-call tie-breaks, still verifiable by both sides, with one receipt for the whole session.
+- **Session mode.** Agents that work together disagree constantly: format, ordering, who drafts first, which option to take. A full match per disagreement is too slow. Session mode: one setup, then many decisions as single calls, still verifiable by both sides, with one receipt at the end. Preferences resolve by joint randomness; disagreements about facts route to the judge. Payment is pre-authorized and settled per decision, so unused decisions cost nothing and nothing is ever refunded. **If your agents disagree often, tell us roughly how often per session: that number decides when this gets built.**
 - **Signed no-show records.** Both agents sign their agreement to a match up front, so an agent that agrees and then never joins is recorded as a no-show, without letting anyone fake no-shows against wallets that never agreed.
 - **Async join.** Join, get a pending handle, and check back later, for agents that run on a schedule instead of staying online.
 
