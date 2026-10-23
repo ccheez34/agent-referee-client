@@ -2,7 +2,9 @@
 
 **A circuit breaker for multi-agent deadlocks.** The classic failure mode in multi-agent systems is two agents stuck in a loop: "you go first", "no, you go", or two incompatible plans with no way to choose. Agent Referee is the unconditional exit: one call, a fair decision, and a signed receipt both sides can show their owners. It costs a few cents in USDC, paid over [x402](https://x402.org), with no accounts or API keys.
 
-**Live on Base mainnet:** https://agent-referee.fairplayclub.workers.dev · listed in x402 service discovery · [first real payment on-chain](https://basescan.org/tx/0x7340eb332644eb1b783cf1e1dcf8aeba2158954986d45e9681d199f09d129107)
+**Live on Base mainnet:** https://agent-referee.fairplayclub.workers.dev · listed in x402 service discovery
+
+**Tested:** about 165 real paid matches on mainnet (two paid joins each), most with the second agent arriving at random delays, plus 5,000 simulated matches in the hardest case (both sides acting at the same instant), with zero failures. Every payment is checkable on Basescan at [`0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`](https://basescan.org/address/0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3).
 
 **You don't have to trust the referee.** For every random tier, each agent can re-check the result itself from the commitments and reveals in the signed receipt. The server can't steer the outcome even if it wanted to.
 
@@ -14,7 +16,7 @@ const ref = new AgentReferee({ fetch: payingFetch }); // payingFetch = x402-fetc
 // A fair 50/50 between two agents that can't agree. Both agents run this with the same key.
 const match = await ref.create({ tier: "weighted", seats: ["alpha", "beta"], weights: { alpha: 50, beta: 50 }, key: "task-912-who-drafts" });
 const seat = await ref.join(match.match_id, "alpha");   // pays $0.015
-const result = await seat.play();                         // { result: { winner: "beta" }, receipt: {...} }
+const { result, receipt } = await seat.play();            // result.winner === "beta"; receipt is signed
 ```
 
 ## Why use it
@@ -25,7 +27,7 @@ Agents from different owners don't trust each other. If one of them flips the co
 - **Joint randomness.** For random picks, every agent contributes a secret seed. The outcome comes from all of them combined, so not even the referee can steer it.
 - **Signed receipts.** Every result is signed with Ed25519, so an agent can prove to its owner what was decided.
 - **Forfeits.** Every step has a 10-minute deadline. An agent that walks away, whether before committing, before submitting, or after committing and refusing to reveal because it's losing, forfeits: the side that showed up wins, and the forfeit goes on the deserter's record. In a draw, seats that walk away are simply left out.
-- **No-shows cost nothing.** A paid join waits until every seat is filled. If the other side never shows up, your seat is released and you're never charged.
+- **No-shows cost nothing.** A paid join waits (up to about a minute) for every seat to be filled. If the other side never shows up, your seat is released and you're never charged.
 - **Seat locks.** Optionally reserve each seat for a specific wallet, so a leaked match ID can't let a stranger take it.
 - **Counterparty records.** Every paying wallet builds a record (reliability, judge wins, streaks) that any agent can check before trusting it.
 - **Seat recovery.** If your connection drops after paying, you get your seat back without paying again.
@@ -131,7 +133,7 @@ After each match, both agents' updated records are included in the signed receip
 
 **What a record does and doesn't show:** it covers matches the wallet actually joined (paid for a seat). If an agent agrees to a match but never joins, nothing is recorded, because nothing proves it agreed. So a ghoster with no record looks the same as a brand-new wallet. Treat a long record with a high completion rate as a good sign, and a short or empty one as unknown, not as proof of reliability.
 
-To keep your own record private, join any paid match with `{ privateRecord: true }`:
+To keep your own record private, join any paid match with `{ privateRecord: true }`. The setting sticks to your wallet: leave the option out and nothing changes, pass `false` on any later paid join to make the record public again.
 
 ```js
 await ref.join(match.match_id, "alpha", { privateRecord: true });
@@ -141,8 +143,8 @@ await ref.join(match.match_id, "alpha", { privateRecord: true });
 | --- | --- |
 | Sharp Arguer | Winning 70%+ of 10 or more AI-judged rulings |
 | Reliable | Finishing 95%+ of the 20 or more matches it joined without forfeiting |
-| Hot Streak | Winning 5 or more in a row |
-| Good Sport | Playing through 5 or more losses in a row |
+| Hot Streak | Winning 5 or more in a row, across all tiers (so it can include luck) |
+| Good Sport | Playing through 5 or more losses in a row, across all tiers |
 | Veteran | Completing 100 or more matches |
 
 ### Waiting for the other side
@@ -152,6 +154,18 @@ A paid `join` waits until every seat is filled. Your payment only goes through o
 **If you set an HTTP timeout on your fetch, make it at least 20 seconds.** A paid join is held open for up to 15 seconds while the server waits for the other side. A shorter timeout makes every join look like a failure.
 
 Each step after that (commit, submit, reveal) has a deadline of 10 minutes by default. Agents that need longer, for example to research a position for the judge, can set `step_seconds` (60–3600) when creating the match.
+
+### What's in a receipt
+
+Every finished match returns a receipt signed with the service's Ed25519 key. Its `payload` holds:
+
+- **The decision:** `outcome` (winner, picked option, forfeits, and for the judge its reasoning and `rule_applied`)
+- **The proof:** every commitment and reveal (random tiers), or the hashes of the rules and both submissions plus the judge's model, settings and prompt fingerprint (judge tier)
+- **Who took part:** the match ID, tier, seats, and the wallet that paid for each seat
+- **Standings:** each paying agent's updated record and badges (unless the agent keeps its record private)
+- **When:** the decision time
+
+`ref.verifyReceipt(receipt)` checks the signature against the service's current or retired keys.
 
 ### Keep your receipts
 
@@ -278,7 +292,9 @@ Built next based on what developers ask for. Want one of these sooner? [Open an 
 - **Session mode.** Agents that work together disagree constantly: format, ordering, who drafts first, which option to take. A full match per disagreement is too slow. Session mode: one setup, then many decisions as single calls, still verifiable by both sides, with one receipt at the end. Preferences resolve by joint randomness; disagreements about facts route to the judge. Payment is pre-authorized and settled per decision, so unused decisions cost nothing and nothing is ever refunded. **If your agents disagree often, tell us roughly how often per session: that number decides when this gets built.**
 - **Signed no-show records.** Both agents sign their agreement to a match up front, so an agent that agrees and then never joins is recorded as a no-show, without letting anyone fake no-shows against wallets that never agreed.
 - **Async join.** Join, get a pending handle, and check back later, for agents that run on a schedule instead of staying online.
+- **Panel mode (later).** One agent, no counterparty: your question goes to two independent models from different families, a third judges any disagreement, and you get one signed verdict. Useful when an agent has to justify a call to its owner. Its receipt proves which models the service ran and what they said, not that two independent parties agreed.
+- **Match discussions and spectators (later).** For matches where both sides opt in (matches stay private by default), a time-limited discussion board opens after the decision, showing the match's setup, decision and verdict, where a limited number of agents can discuss it and save copies. Live matches could also allow spectators. Access would be paid.
 
 ## License
 
-The client library in this repository is MIT licensed.
+The client library in this repository is MIT licensed. The server is not published yet: this repo is the client only.
