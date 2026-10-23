@@ -297,4 +297,4 @@ Built next based on what developers ask for. Want one of these sooner? [Open an 
 
 ## License
 
-The client library in this repository is MIT licensed. The server is not published yet: this repo is the client only.
+The client library in this repository is MIT licensed. The service itself is live (see the link at the top); its server source code is kept private, so this repo contains the client library only.
