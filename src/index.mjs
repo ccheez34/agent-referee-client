@@ -19,6 +19,102 @@ export class RefereeError extends Error {
   }
 }
 
+/**
+ * Wrap the fetch you give to x402-fetch so payment proofs are remembered:
+ *   const capture = captureFetch(fetch, { store: fileProofStore() });   // Node: one line, survives restarts
+ *   const ref = new AgentReferee({ fetch: wrapFetchWithPayment(capture.fetch, signer), capture });
+ * The proof is kept in memory and saved to the store BEFORE the paid request is sent, so it survives a
+ * dropped connection; with a store it also survives a restart. It's removed once the service gives a definite answer.
+ * A store is any object with save(key, proof, { match_id, seat }) and remove(key).
+ */
+export function captureFetch(baseFetch = globalThis.fetch.bind(globalThis), opts = {}) {
+  const payments = new Map();
+  // One proof per (url, request body): the same /join path is used for every match, so the body
+  // (match_id + seat) is what tells concurrent joins apart.
+  const keyOf = (url, body) => `${url}|${typeof body === "string" ? body : ""}`;
+  return {
+    fetch: async (input, init = {}) => {
+      const headers = new Headers(init.headers || {});
+      const p = headers.get("X-PAYMENT");
+      const url = typeof input === "string" ? input : input.url;
+      const key = keyOf(url, init.body);
+      let info = { url };
+      try {
+        const b = JSON.parse(init.body);
+        info = { url, match_id: b.match_id, seat: b.seat };
+      } catch {}
+      if (p) {
+        payments.set(key, p);
+        if (opts.store) await opts.store.save(key, p, info); // persist first, then send
+        if (opts.onPayment) await opts.onPayment(url, p, info);
+      }
+      const res = await baseFetch(input, init); // if this throws (no reply), the proof stays saved for recovery
+      // A definite answer from the service (2xx: seat issued; 4xx: payment never settled) means the proof
+      // is no longer needed. 5xx can come from a gateway after the seat was already claimed, so keep it.
+      if (p && res.status < 500 && opts.store?.remove) await opts.store.remove(key).catch(() => {});
+      return res;
+    },
+    /** The proof sent with a request to `url` with this exact JSON body string. */
+    lastPayment: (url, body) => payments.get(keyOf(url, body)),
+  };
+}
+
+/**
+ * Node.js proof store: one small JSON file per in-flight paid join, in `dir` (default ./.agent-referee-proofs).
+ * Each file holds { match_id, seat, proof }. After a crash, call ref.recover(match_id, proof) for each file left.
+ */
+export function fileProofStore(dir = ".agent-referee-proofs") {
+  const fileFor = async (key) => `${dir}/${(await sha256Hex(key)).slice(0, 32)}.json`;
+  const fs = () => import("node:fs/promises");
+  return {
+    async save(key, proof, info = {}) {
+      const f = await fs();
+      await f.mkdir(dir, { recursive: true });
+      await f.writeFile(await fileFor(key), JSON.stringify({ ...info, key, proof, saved_at: new Date().toISOString() }));
+    },
+    async remove(key) {
+      await (await fs()).rm(await fileFor(key), { force: true });
+    },
+    /** Every saved proof: [{ key, match_id, seat, proof }]. */
+    async list() {
+      const f = await fs();
+      let names = [];
+      try { names = await f.readdir(dir); } catch { return []; }
+      const out = [];
+      for (const n of names.filter((n) => n.endsWith(".json"))) {
+        try {
+          const e = JSON.parse(await f.readFile(`${dir}/${n}`, "utf8"));
+          out.push({ ...e, key: e.key });
+        } catch {}
+      }
+      return out;
+    },
+  };
+}
+
+/** Browser proof store using localStorage. Each entry holds { match_id, seat, proof }. */
+export function localStorageProofStore(prefix = "agent-referee-proof:") {
+  return {
+    async save(key, proof, info = {}) {
+      try { globalThis.localStorage?.setItem(prefix + key, JSON.stringify({ ...info, key, proof })); } catch {}
+    },
+    async remove(key) {
+      try { globalThis.localStorage?.removeItem(prefix + key); } catch {}
+    },
+    async list() {
+      const out = [];
+      try {
+        const ls = globalThis.localStorage;
+        for (let i = 0; ls && i < ls.length; i++) {
+          const k = ls.key(i);
+          if (k?.startsWith(prefix)) out.push(JSON.parse(ls.getItem(k)));
+        }
+      } catch {}
+      return out;
+    },
+  };
+}
+
 /** sha256 hex of a string, using Web Crypto. */
 export async function sha256Hex(text) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -41,13 +137,57 @@ export class AgentReferee {
    * @param {typeof fetch} [opts.fetch] A fetch that can pay x402 requests (e.g. x402-fetch's wrapFetchWithPayment).
    *   Free requests also go through it. Without one, paid joins fail with HTTP 402.
    * @param {number} [opts.pollMs] How often to poll while waiting (default 2000).
-   * @param {number} [opts.timeoutMs] Max wait for the other side (default 15 minutes).
+   * @param {number} [opts.timeoutMs] Max wait for the other side's moves during play (default 15 minutes).
+   * @param {(receipt: object, status: object) => void|Promise<void>} [opts.onReceipt] Called once per finished
+   *   match with its signed receipt. Persist it: the service deletes match data after 7 days.
+   * @param {object} [opts.capture] From captureFetch(), enables automatic seat recovery.
+   * @param {number} [opts.joinRetries] Extra 15-second waits for the other side before giving up (default 3, about 1 minute).
    */
   constructor(opts = {}) {
     this.url = (opts.url || DEFAULT_URL).replace(/\/$/, "");
     this.fetch = opts.fetch || globalThis.fetch.bind(globalThis);
     this.pollMs = opts.pollMs ?? 2000;
     this.timeoutMs = opts.timeoutMs ?? 15 * 60_000;
+    this.capture = opts.capture; // from captureFetch(): remembers payment proofs for seat recovery
+    this.joinRetries = opts.joinRetries ?? 3; // a paid join waits 15 s on the server; 3 retries = about 1 minute
+    this.onReceipt = opts.onReceipt; // called once with each finished match's signed receipt: save it!
+    this._savedReceipts = new Set();
+  }
+
+  /**
+   * Run at startup (one line for serverless agents): goes through every proof left in `store` from a
+   * join that was cut off, recovers the seats that are still live, and clears proofs that are no longer needed.
+   * Returns the recovered seats: [{ match_id, seat: Seat }].
+   */
+  async recoverPending(store) {
+    const recovered = [];
+    for (const e of (await store.list?.()) ?? []) {
+      if (!e?.match_id || !e?.proof) {
+        if (e?.key) await store.remove(e.key).catch(() => {});
+        continue;
+      }
+      try {
+        const r = await this.recover(e.match_id, e.proof);
+        if (r.seat_token) {
+          const st = r.match ?? (await this.status(e.match_id));
+          recovered.push({ match_id: e.match_id, seat: new Seat(this, e.match_id, r.seat, r.seat_token, st.tier) });
+        }
+        await store.remove(e.key); // recovered, or the match is already over: proof no longer needed
+      } catch (err) {
+        // 404: that payment never claimed a seat (it never settled), so there's nothing to recover.
+        if (err instanceof RefereeError && (err.status === 404 || err.status === 400)) await store.remove(e.key).catch(() => {});
+        // Anything else (network trouble): keep the proof and try again next time.
+      }
+    }
+    return recovered;
+  }
+
+  /**
+   * Re-issue a seat you paid for but never received a token for. `payment` is the exact X-PAYMENT
+   * header value from the paid join. No new charge. Returns { seat, seat_token, match }.
+   */
+  recover(matchId, payment) {
+    return this._call("POST", `/matches/${matchId}/recover`, { payment });
   }
 
   async _call(method, path, body) {
@@ -69,7 +209,9 @@ export class AgentReferee {
   /**
    * Create a match (free). Share the returned match_id with the other agent(s), or pass a shared
    * `key` that every agent uses with the same settings so they all land in the same match.
+   * Optional `seat_wallets` ({ alpha: "0x...", beta: "0x..." }) reserves each paid seat for one wallet.
    * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge", seats: string[], title?: string, key?: string,
+   *          seat_wallets?: Record<string, string>,
    *          weights?: Record<string, number>, options?: string[], rules?: string}} spec
    */
   create(spec) {
@@ -84,14 +226,50 @@ export class AgentReferee {
   /**
    * Join a match and claim a seat. This is the paid step for most tiers.
    * For "draw": the mediator joins with seat "mediator" (paid), parties join free.
+   * Pass { privateRecord: true } to hide your wallet's record from lookups (false to show it again).
+   * If a paid join fails after the payment went through (e.g. the connection dropped), the client
+   * automatically recovers the seat using the payment proof, as long as the client was created with
+   * a `capture` from captureFetch().
    * @returns {Promise<Seat>}
    */
-  async join(matchId, seat) {
+  async join(matchId, seat, opts = {}) {
     const st = await this.status(matchId);
     let path = JOIN_PATH[st.tier];
     if (st.tier === "draw") path = seat === "mediator" ? "/join/draw/mediator" : "/join/draw/party";
-    const r = await this._call("POST", path, { match_id: matchId, seat });
+    const body = { match_id: matchId, seat };
+    if (typeof opts.privateRecord === "boolean") body.private_record = opts.privateRecord;
+    let r;
+    let retries = opts.joinRetries ?? this.joinRetries;
+    for (;;) {
+      try {
+        r = await this._call("POST", path, body);
+        break;
+      } catch (e) {
+        // 408: the other seat(s) didn't show within the server's 15-second wait. We were NOT charged.
+        if (e instanceof RefereeError && e.status === 408) {
+          if (retries-- > 0) continue;
+          throw new RefereeError("The other side didn't show up. You were not charged.", 408, e.body);
+        }
+        // Paid but no seat_token back (dropped connection, gateway error)? Try to recover the seat with the
+        // payment proof right away, instead of paying again or waiting for a restart.
+        const payment = this.capture?.lastPayment(this.url + path, JSON.stringify(body));
+        if (!payment) throw e;
+        try {
+          r = await this.recover(matchId, payment);
+          break;
+        } catch (re) {
+          // 404: that payment never claimed a seat, so it never settled. Safe to try joining again.
+          if (re instanceof RefereeError && re.status === 404 && retries-- > 0) continue;
+          throw re;
+        }
+      }
+    }
     return new Seat(this, matchId, seat, r.seat_token, st.tier);
+  }
+
+  /** A wallet's record: judge wins/losses, luck wins/losses, reliability, streaks and badges (free). */
+  agent(wallet) {
+    return this._call("GET", `/agents/${wallet}`);
   }
 
   /** Wait until fn(status) returns true. */
@@ -99,6 +277,10 @@ export class AgentReferee {
     const deadline = Date.now() + this.timeoutMs;
     for (;;) {
       const st = await this.status(matchId);
+      if (st.phase === "done" && st.receipt && this.onReceipt && !this._savedReceipts.has(matchId)) {
+        this._savedReceipts.add(matchId);
+        await this.onReceipt(st.receipt, st);
+      }
       if (fn(st)) return st;
       if (["done", "expired", "error"].includes(st.phase)) return st;
       if (Date.now() > deadline) throw new RefereeError("Timed out waiting for the other side.", 0, st);
@@ -106,14 +288,22 @@ export class AgentReferee {
     }
   }
 
-  /** Verify a receipt's Ed25519 signature against the service's public key. */
+  /**
+   * Verify a receipt's Ed25519 signature. Accepts the current signing key or any retired key
+   * the service publishes in its key history, so old receipts stay valid after key rotation.
+   */
   async verifyReceipt(receipt) {
     if (!receipt?.signature) return false;
-    const { public_key } = await this._call("GET", "/pubkey");
-    if (!public_key) return false;
+    const info = await this._call("GET", "/pubkey");
+    const trusted = [info.public_key, ...(info.history || []).map((h) => h.public_key)].filter(Boolean);
+    const candidates = receipt.public_key ? trusted.filter((k) => k === receipt.public_key) : trusted;
     const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-    const key = await crypto.subtle.importKey("raw", b64(public_key), { name: "Ed25519" }, false, ["verify"]);
-    return crypto.subtle.verify({ name: "Ed25519" }, key, b64(receipt.signature), new TextEncoder().encode(canonicalJson(receipt.payload)));
+    const data = new TextEncoder().encode(canonicalJson(receipt.payload));
+    for (const k of candidates) {
+      const key = await crypto.subtle.importKey("raw", b64(k), { name: "Ed25519" }, false, ["verify"]);
+      if (await crypto.subtle.verify({ name: "Ed25519" }, key, b64(receipt.signature), data)) return true;
+    }
+    return false;
   }
 }
 
