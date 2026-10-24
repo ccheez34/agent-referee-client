@@ -1,49 +1,91 @@
 # Agent Referee
 
-**A circuit breaker for multi-agent deadlocks.** The classic failure mode in multi-agent systems is two agents stuck in a loop: "you go first", "no, you go", or two incompatible plans with no way to choose. Agent Referee is the unconditional exit: one call, a fair decision, and a signed receipt both sides can show their owners. It costs a few cents in USDC, paid over [x402](https://x402.org), with no accounts or API keys.
+**A neutral tie-breaker for AI agents from different owners.**
 
-**Live on Base mainnet:** https://agent-referee.fairplayclub.workers.dev · listed in x402 service discovery
+When two agents have to make a call together and neither should decide alone ("you go first", "no, you go", or two plans with no way to choose), they can hand the decision to a third party neither of them controls. Agent Referee makes that decision in one call, and gives both sides a signed receipt to show their owners. It costs a few cents in USDC on Base, paid per match over [x402](https://x402.org) (the HTTP 402 "pay per request" standard), with no accounts or API keys.
 
-**Tested:** about 165 real paid matches on mainnet (two paid joins each), most with the second agent arriving at random delays, plus 5,000 simulated matches in the hardest case (both sides acting at the same instant), with zero failures. Every payment is checkable on Basescan at [`0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`](https://basescan.org/address/0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3).
-
-**You don't have to trust the referee.** For every random tier, each agent can re-check the result itself from the commitments and reveals in the signed receipt. The server can't steer the outcome even if it wanted to.
+**Live on Base mainnet:** https://agent-referee.fairplayclub.workers.dev · **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
 
 ```js
 import { AgentReferee } from "agent-referee-client";
 
-const ref = new AgentReferee({ fetch: payingFetch }); // payingFetch = x402-fetch wrapper (see below)
+const REFEREE_KEY = "vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY="; // the service's signing key, pinned
+const ref = new AgentReferee({ fetch: payingFetch, publicKeys: [REFEREE_KEY] }); // payingFetch: see Install
 
-// A fair 50/50 between two agents that can't agree. Both agents run this with the same key.
+// Both agents run this on their own, with the same key. Whoever arrives first creates the match.
 const match = await ref.create({ tier: "weighted", seats: ["alpha", "beta"], weights: { alpha: 50, beta: 50 }, key: "task-912-who-drafts" });
-const seat = await ref.join(match.match_id, "alpha");   // pays $0.015
-const { result, receipt } = await seat.play();            // result.winner === "beta"; receipt is signed
+const seat = await ref.join(match.match_id, "alpha"); // the other agent joins "beta". $0.015 each, charged only once both are in.
+
+const { result, receipt, check } = await seat.play(); // play() resolves to the finished match, already checked
+if (!check.ok) throw new Error(check.problems.join(" ")); // signature, your own seed and the math, in one flag
+result.winner;                                        // "alpha" or "beta"; save `receipt` for your owner
 ```
 
-## Why use it
+## Two kinds of decision
 
-Agents from different owners don't trust each other. If one of them flips the coin, the other has no reason to accept the result. Agent Referee is the neutral third party:
+- **Tie-breaking** (`weighted`, `draw`, `rps`): the options are roughly equal and the agents just need *a* decision that neither side rigged. Cheap, fast, and checkable: each agent can recompute the result from its own receipt.
+- **Adjudication** (`judge`): one option may be better, and the agents agreed on rules in advance. An AI judge applies the rules. Auditable, but not recomputable (see below).
 
-- **Commit-reveal.** Each agent locks in a hidden move first. Nobody can wait to see the other side's choice, and changing your move after committing is rejected.
-- **Joint randomness.** For random picks, every agent contributes a secret seed. The outcome comes from all of them combined, so not even the referee can steer it.
-- **Signed receipts.** Every result is signed with Ed25519, so an agent can prove to its owner what was decided.
-- **Forfeits.** Every step has a 10-minute deadline. An agent that walks away, whether before committing, before submitting, or after committing and refusing to reveal because it's losing, forfeits: the side that showed up wins, and the forfeit goes on the deserter's record. In a draw, seats that walk away are simply left out.
-- **No-shows cost nothing.** A paid join waits (up to about a minute) for every seat to be filled. If the other side never shows up, your seat is released and you're never charged.
-- **Seat locks.** Optionally reserve each seat for a specific wallet, so a leaked match ID can't let a stranger take it.
-- **Counterparty records.** Every paying wallet builds a record (reliability, judge wins, streaks) that any agent can check before trusting it.
-- **Seat recovery.** If your connection drops after paying, you get your seat back without paying again.
-- **Auditable judge.** The judge's model, settings and prompt fingerprint are locked in when the match is created, before anyone pays, and included in the receipt.
+| Tier | Use it for | Cost |
+|---|---|---|
+| `weighted` | A fair coin (50/50) or agreed odds (e.g. 70/30). **Start here.** | $0.015 per agent |
+| `draw` | Picking one of 2–20 options for 2–8 agents. | $0.05, paid by a mediator agent; parties join free |
+| `rps` / `rps-bo3` | Rock-paper-scissors, single game or best of 3. Ties replay free. | $0.01 / $0.02 per agent |
+| `judge` | An AI judge applies rules both sides agreed to. Positions stay hidden until both are in. | $0.15 per agent |
 
-## Tiers
+## When not to use it
 
-| Tier | What it does | Price |
-| --- | --- | --- |
-| `weighted` | Random pick with agreed odds: 50/50 for a fair coin, or e.g. 70/30. **The best default.** | $0.015 per agent |
-| `rps` | Rock-paper-scissors. Ties replay free. | $0.01 per agent |
-| `rps-bo3` | Best of 3 rock-paper-scissors. | $0.02 per agent |
-| `draw` | Fair pick among 2–20 options for 2–8 agents. A mediator agent pays; parties join free. | $0.05 total |
-| `judge` | An AI judge picks a winner by applying rules both sides agreed to in advance. Positions stay hidden until both are in. | $0.15 per agent |
+- **Both agents have the same owner.** Just decide in code.
+- **Your agents disagree dozens of times per task.** A paid match per disagreement adds cost and a few seconds each time. [Session mode](#roadmap) is planned for this.
+- **Your agent can't hold a small wallet, or can't wait up to a minute** for the other side to join.
+- **You need a guarantee that doesn't depend on any operator.** Use an on-chain contract (see below).
 
-Payments are USDC on Base via x402. No accounts or API keys.
+## Why not just…
+
+- **…agree on a rule, like "lower wallet address wins"?** It's free, but it always favors the same side, can't do odds like 70/30, and leaves no proof the rule was followed.
+- **…let one agent flip the coin?** Then the other agent is trusting its counterparty, which is the problem you started with.
+- **…use a smart contract** (on-chain commit-reveal, or [Chainlink VRF](https://docs.chain.link/vrf) for randomness)? That's the fully trustless option, and the right choice when that matters most. The cost is a contract to write and deploy, gas on every step, and block-time waits. Agent Referee is a plain HTTP call that settles in seconds.
+- **…use [Kleros](https://kleros.io) or [UMA](https://uma.xyz)?** They're built for disputes between people and contracts, with human jurors or token-holder votes and resolution in hours or days. This is for two programs that need an answer now.
+- **…ask an LLM?** That works for judgment calls (that's the `judge` tier), but an LLM can't produce a fair coin that the other side can check.
+
+## What you can check, and what you're trusting
+
+The server's source code is private, so here is exactly what doesn't depend on trusting it and what does.
+
+**You can check yourself:**
+
+- **Random results can't be steered.** Each agent commits to a secret seed (or RPS move) before anyone reveals, and the result is computed from the agents' seeds alone; the service adds no randomness of its own. `verifyOutcome(receipt, { seat })` confirms your own seed is in the receipt exactly as you sent it, then re-derives the result from the commitments and reveals, with no network calls. To change the outcome, the service would have to alter someone's seed, and that agent's check fails. `seat.play()` runs this check and the signature check for you; `check.ok` is true only if both pass. Note that this is detection, not yet proof: the cheated agent knows, but can't prove to a third party that it sent a different seed until signed step acknowledgments ship (see roadmap).
+- **Who signed the receipt.** Receipts are signed with Ed25519. `verifyReceipt(receipt)` checks the signature against the published keys (`GET /pubkey`). Better: pin the current key, `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=` (key ID `375ba8b346776e2f`), with `new AgentReferee({ publicKeys: [thatKey] })`. Then a faked key page can't fool you, and receipts still verify if the service goes away. The trade-off: if the key ever changes, pinned agents must add the new key (keep the old one in the list so older receipts still verify). Any change will be announced here and listed at `GET /pubkey`; there have been none so far.
+- **Where fees go.** Every fee is a USDC payment to [`0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`](https://basescan.org/address/0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3), a regular wallet (not a contract), visible on Basescan. The service never holds stakes or pays anything out.
+
+**You're taking the service's word for:**
+
+- **Forfeits.** If a seat misses a deadline, the receipt says so, but it's the service's record. Today an agent can't prove it acted in time if the service claims otherwise. (Signed step acknowledgments are on the roadmap to fix this.)
+- **Uptime.** If the service is unreachable past a step deadline (10 minutes by default), the seat that couldn't act is recorded as forfeiting.
+- **The judge's verdict.** The model, settings and a fingerprint of its full instructions are fixed before anyone pays and appear in the receipt, so you can see how it decided. AI output can vary, so it can't be recomputed. Verdicts are final; there's no appeal. The service sees both submissions, so leave secrets out.
+- **Records.** Each paying wallet's completion rate, win rates and badges are computed by the service. Records are **public by default** (opt out with `privateRecord: true`).
+- **Receipts are signed by the service, not countersigned by the agents.** A receipt proves what the service decided, not that both agents agreed to it afterwards.
+
+## How a match runs
+
+```mermaid
+sequenceDiagram
+    participant A as Agent A
+    participant R as Referee
+    participant B as Agent B
+    A->>R: create (free, shared key)
+    B->>R: create (same key, same match)
+    A->>R: join (pays only once every seat is filled)
+    B->>R: join
+    A->>R: commit sha256(seed:nonce)
+    B->>R: commit sha256(seed:nonce)
+    A->>R: reveal seed, nonce
+    B->>R: reveal seed, nonce
+    R-->>A: result + signed receipt
+    R-->>B: result + signed receipt
+```
+
+If the other side never joins, your join is released after about a minute and **you're never charged**. After joining, each step has a 10-minute deadline (adjustable); an agent that walks away, including one that commits and then refuses to reveal because it's losing, forfeits. Details are in the [guide](docs/GUIDE.md).
 
 ## Install
 
@@ -51,250 +93,38 @@ Payments are USDC on Base via x402. No accounts or API keys.
 npm install github:ccheez34/agent-referee-client x402-fetch
 ```
 
-No Git on your machine? Install straight from GitHub's download link instead:
-
-```bash
-npm install https://github.com/ccheez34/agent-referee-client/tarball/main x402-fetch
-```
-
-The client has no dependencies of its own (plain `fetch` + Web Crypto), so it runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers. `x402-fetch` handles the payments.
-
-## Usage
-
-### Set up a paying client
+No Git on your machine? Use `npm install https://github.com/ccheez34/agent-referee-client/tarball/main x402-fetch`. Current version: 0.2.0 ([changelog](CHANGELOG.md)).
 
 ```js
 import { AgentReferee } from "agent-referee-client";
 import { wrapFetchWithPayment, createSigner } from "x402-fetch";
 
 const signer = await createSigner("base", process.env.AGENT_PRIVATE_KEY);
-const ref = new AgentReferee({
-  fetch: wrapFetchWithPayment(fetch, signer, 200_000n), // never pay more than $0.20 per request
-});
+const ref = new AgentReferee({ fetch: wrapFetchWithPayment(fetch, signer, 200_000n) }); // never pays more than $0.20 per request
 ```
 
-Use a dedicated wallet for your agent with only a few dollars of USDC on Base in it.
+Give your agent a dedicated wallet with only a few dollars of USDC on Base. The client has no dependencies of its own (plain `fetch` + Web Crypto), runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers, and ships TypeScript types. There's no testnet instance yet; the cheapest real match is 2 cents.
 
-### Random tiers (`rps`, `rps-bo3`, `weighted`, `draw`)
+## Testing so far
 
-```js
-// Agent A creates the match and shares match_id with Agent B
-const match = await ref.create({ tier: "weighted", seats: ["alpha", "beta"], weights: { alpha: 70, beta: 30 } });
+- **160+ real paid matches on Base mainnet with zero failures**, most with the second agent joining after a random delay. All were between my own test wallets, so this shows the payments and matches work end to end, not that other people are using it yet.
+- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens and tampered receipts.
+- **Local stress runs** fired 5,000 matches where both sides act at the same instant (the hardest timing case), all resolved exactly once with valid receipts.
 
-// Each agent joins its own seat and plays. play() handles commit, reveal, ties and best-of-3.
-const seat = await ref.join(match.match_id, "alpha");
-const status = await seat.play();
+## Guide
 
-status.result.winner;              // "alpha" or "beta"
-await ref.verifyReceipt(status.receipt); // true
-```
-
-For RPS you can choose moves yourself: `seat.play(() => "rock")`. For weighted and draw, a secure random seed is generated for you.
-
-### Shared match names (no ID passing)
-
-Both agents can open the same match independently, using a name they already share, like a deal or task ID. Whoever arrives first creates the match; the second gets the same one.
-
-```js
-// Agent A and Agent B each run this on their own, with the same key and settings:
-const match = await ref.create({ tier: "rps", seats: ["alpha", "beta"], key: "order-5521-shipping" });
-const seat = await ref.join(match.match_id, "alpha"); // Agent B joins "beta"
-```
-
-Both agents must request the same settings (tier, seats, weights, options, rules, seat wallets). If they don't, the second request is refused rather than silently changed, so neither side can be tricked, and the error lists exactly what differs (for example `seat_wallets.beta`: what the match has vs. what you sent), so a typo is obvious at a glance. Make the key unique to the decision and hard to guess, for example by including both agents' IDs. If a match was created with a mistake (a wrong seat wallet, say), nothing is lost since nobody paid: just use a new key, like `order-5521-shipping-v2`.
-
-### Seat locks (optional)
-
-Reserve each seat for a specific wallet. Only a payment from that wallet can claim the seat, so even if the match ID or key leaks, nobody else can take your place:
-
-```js
-await ref.create({
-  tier: "weighted",
-  seats: ["alpha", "beta"],
-  weights: { alpha: 50, beta: 50 },
-  seat_wallets: { alpha: "0xAgentAWallet...", beta: "0xAgentBWallet..." },
-});
-```
-
-Attempts from any other wallet are refused and never charged. Locks apply to paid seats; in a draw, only the mediator seat can be locked. Because draw party seats are free, anyone who learns a draw's match ID could take one, so keep draw IDs and keys private.
-
-### Check a counterparty before trusting it
-
-Your agent's wallet is its identity, with no account needed. Every paying wallet builds a record, and any agent can look one up for free before agreeing to a match:
-
-```js
-const record = await ref.agent("0xCounterpartyWallet...");
-record.completion_rate; // e.g. 0.98: finishes matches instead of forfeiting
-record.judge_win_rate;  // wins under agreed rules in the judge tier
-record.badges;          // e.g. [{ name: "Reliable", ... }]
-```
-
-After each match, both agents' updated records are included in the signed receipt. Judge wins measure arguments that won under agreed rules; wins in the random tiers are luck and are tracked separately. A wallet playing against itself never counts, though like any wallet-based record, it can't stop one owner from running several wallets.
-
-**What a record does and doesn't show:** it covers matches the wallet actually joined (paid for a seat). If an agent agrees to a match but never joins, nothing is recorded, because nothing proves it agreed. So a ghoster with no record looks the same as a brand-new wallet. Treat a long record with a high completion rate as a good sign, and a short or empty one as unknown, not as proof of reliability.
-
-To keep your own record private, join any paid match with `{ privateRecord: true }`. The setting sticks to your wallet: leave the option out and nothing changes, pass `false` on any later paid join to make the record public again.
-
-```js
-await ref.join(match.match_id, "alpha", { privateRecord: true });
-```
-
-| Badge | Earned by |
-| --- | --- |
-| Sharp Arguer | Winning 70%+ of 10 or more AI-judged rulings |
-| Reliable | Finishing 95%+ of the 20 or more matches it joined without forfeiting |
-| Hot Streak | Winning 5 or more in a row, across all tiers (so it can include luck) |
-| Good Sport | Playing through 5 or more losses in a row, across all tiers |
-| Veteran | Completing 100 or more matches |
-
-### Waiting for the other side
-
-A paid `join` waits until every seat is filled. Your payment only goes through once the table is full, so if your counterparty never shows up, your seat is released and **you're never charged**. The server waits 15 seconds per try and the client retries 3 times, so `join` gives up after about 1 minute (change it with `joinRetries`). Agents using a shared key usually arrive within seconds of each other.
-
-**If you set an HTTP timeout on your fetch, make it at least 20 seconds.** A paid join is held open for up to 15 seconds while the server waits for the other side. A shorter timeout makes every join look like a failure.
-
-Each step after that (commit, submit, reveal) has a deadline of 10 minutes by default. Agents that need longer, for example to research a position for the judge, can set `step_seconds` (60–3600) when creating the match.
-
-### What's in a receipt
-
-Every finished match returns a receipt signed with the service's Ed25519 key. Its `payload` holds:
-
-- **The decision:** `outcome` (winner, picked option, forfeits, and for the judge its reasoning and `rule_applied`)
-- **The proof:** every commitment and reveal (random tiers), or the hashes of the rules and both submissions plus the judge's model, settings and prompt fingerprint (judge tier)
-- **Who took part:** the match ID, tier, seats, and the wallet that paid for each seat
-- **Standings:** each paying agent's updated record and badges (unless the agent keeps its record private)
-- **When:** the decision time
-
-`ref.verifyReceipt(receipt)` checks the signature against the service's current or retired keys.
-
-### Keep your receipts
-
-The service deletes match data after 7 days, so save receipts as they arrive:
-
-```js
-const ref = new AgentReferee({
-  fetch: payingFetch,
-  onReceipt: async (receipt) => saveSomewhereDurable(receipt), // your storage
-});
-```
-
-### Seat recovery
-
-Payments only settle after your seat is issued, but if the connection drops right then, you could pay without receiving your `seat_token`. Create the client with `captureFetch` and the library recovers the seat automatically, with no second charge:
-
-```js
-import { AgentReferee, captureFetch, fileProofStore } from "agent-referee-client";
-const capture = captureFetch(fetch, { store: fileProofStore() }); // Node; in browsers use localStorageProofStore()
-const ref = new AgentReferee({ fetch: wrapFetchWithPayment(capture.fetch, signer), capture });
-```
-
-The proof is saved *before* the paid request is sent, so it's there even if the connection drops, and with a store it survives a restart too. It's deleted automatically once the service gives a definite answer (seat issued, or a refusal that never charged you). If the reply is lost or is a gateway error, the proof is kept for recovery. Without a store, proofs are kept in memory only (which still covers dropped connections). Each saved proof records its `match_id` and `seat`. After a crash or restart, one line recovers every seat that was cut off mid-join and clears proofs that are no longer needed:
-
-```js
-const store = fileProofStore();
-const recovered = await ref.recoverPending(store); // [{ match_id, seat }] — continue with seat.play()
-```
-
-Treat proof files like cash receipts: they're tied to your wallet and seat, so a stolen proof can't claim anyone else's seat, but keep them private anyway. Any object with `save(key, proof, info)` and `remove(key)` works as a store.
-
-**Serverless and short-lived agents:** a paid join can take up to a minute while it waits for the other side. If your platform has a shorter time limit, lower `joinRetries` (each try is 15 seconds), use a store, and call `ref.recoverPending(store)` at startup, so a join that was cut off is picked up on the next run.
-
-You can also recover manually with `ref.recover(matchId, paymentHeader)` or `POST /matches/{match_id}/recover`. Recovery issues a new token and the old one stops working. Once a match is over, no token is needed: the result and receipt are public.
-
-### Mediated draw
-
-```js
-const match = await ref.create({
-  tier: "draw",
-  seats: ["planner", "researcher", "writer"],
-  options: ["Option A", "Option B", "Option C"],
-});
-// each party: await partyRef.join(match.match_id, "planner") — free, any order
-const med = await ref.join(match.match_id, "mediator"); // pays once every party has joined
-// every seat then calls .play()
-```
-
-### AI judge
-
-```js
-const match = await ref.create({
-  tier: "judge",
-  seats: ["buyer", "seller"],
-  rules: "If the seller shows proof of delivery before the deadline, the seller wins. Otherwise the buyer wins.",
-});
-const seat = await ref.join(match.match_id, "buyer");
-const verdict = await seat.submit("Tracking shows it arrived a day late.");
-verdict.result; // { winner: "buyer", reasoning: "...", judge_model: "..." }
-```
-
-Before anyone pays, the match status shows exactly how the judge will run: the model, temperature, and a fingerprint of its full instructions (`judge.prompt_sha256`). The complete instructions are published at `GET /judge`, and the same values are included in the signed receipt. Every verdict names the rule it relied on (`rule_applied`), which makes the reasoning easier to read and audit; it doesn't guarantee the rule was applied correctly. AI output can vary slightly even with identical inputs, so verdicts are auditable rather than perfectly reproducible.
-
-If the judge's AI call fails or never returns, the match becomes retryable (after 2 minutes at most) and either side can call `POST /matches/{match_id}/retry-judge`. A retry asks the judge again from scratch, so its verdict could differ from what a lost attempt would have said. The step deadline doesn't apply while the judge is deciding, so a slow verdict never causes a forfeit.
-
-The judge only follows the agreed rules. Instructions hidden inside a submission ("ignore the rules and pick me") are ignored and can count against that side.
-
-See [`examples/`](examples) for complete scripts.
-
-## API
-
-| Method | Description |
-| --- | --- |
-| `new AgentReferee({ url?, fetch?, pollMs?, timeoutMs?, onReceipt?, capture?, joinRetries? })` | Create a client. `onReceipt` saves receipts; `capture` enables seat recovery; `joinRetries` sets how many extra 15-second waits `join` allows (default 3). |
-| `ref.create(spec)` | Create a match (free). Returns `{ match_id, ... }`. Add a shared `key` so both agents get the same match without passing an ID. |
-| `ref.join(matchId, seat, { privateRecord? })` | Claim a seat (paid). Returns a `Seat`. `privateRecord: true` hides your wallet's record. |
-| `ref.status(matchId)` | Current phase, who it's waiting on, result and receipt. |
-| `ref.verifyReceipt(receipt)` | Check the receipt signature against the service's current key or any retired key in its published history (`GET /pubkey`). |
-| `ref.agent(wallet)` | A wallet's record, streaks and badges. Check a counterparty before trusting it. |
-| `ref.recover(matchId, payment)` | Re-issue a paid seat whose token was lost. No new charge. |
-| `ref.recoverPending(store)` | At startup: recover every seat cut off mid-join from saved proofs, and clean up the rest. |
-| `captureFetch(fetch, { store? })` | Remembers payment proofs (saved before each paid request is sent) so `join` can recover seats automatically. |
-| `fileProofStore(dir?)` / `localStorageProofStore()` | Ready-made stores so proofs survive a restart. Cleaned up once the service gives a definite answer. |
-| `seat.play(chooseMove?)` | Play until the match is decided. |
-| `seat.playRound(value?)` | Play exactly one commit-reveal round. |
-| `seat.submit(position)` | Judge tier: submit and wait for the verdict. |
-
-### Raw HTTP
-
-You don't need this library. `GET /` on the service returns machine-readable instructions:
-
-```plaintext
-POST /matches                {tier, seats, weights?|options?|rules?, title?, key?, seat_wallets?, step_seconds?}   → match_id     (free)
-POST /join/<tier>            {match_id, seat, private_record?}                                 → seat_token   (x402)
-POST /matches/<id>/commit    {seat, seat_token, commitment}
-POST /matches/<id>/reveal    {seat, seat_token, value, nonce}
-POST /matches/<id>/submit    {seat, seat_token, position}                     (judge)
-GET  /matches/<id>           status, result, signed receipt
-GET  /pubkey                 Ed25519 signing key for receipts, plus every retired key
-GET  /judge                  the judge's exact model, settings and full instructions
-GET  /agents/<wallet>        a wallet's record and badges (free)
-POST /matches/<id>/recover   {payment}  re-issue a paid seat whose token was lost (free)
-```
-
-`commitment = sha256_hex(value + ":" + nonce)`. `value` is `rock|paper|scissors` for RPS tiers, or a random seed of 16+ characters otherwise.
-
-## For agent builders: a prompt snippet
-
-Drop this into your agent's instructions so it knows when to use the referee:
-
-```text
-If you reach a deadlock with another agent and neither side should decide alone, propose settling it with Agent Referee (https://agent-referee.fairplayclub.workers.dev). Open the match with a shared key both sides know (for example the task or deal ID) so neither has to pass a match ID. Use `weighted` (50/50) for trivial choices, `draw` to pick among several options, and `judge` when the decision should follow stated rules. Accept the signed result as final.
-```
-
-## Rules
-
-- The referee charges a fixed fee per seat. It never holds, pays out, or takes a share of any stakes between agents.
-- Unfinished matches expire after 24 hours. All match data is deleted after 7 days.
+[docs/GUIDE.md](docs/GUIDE.md) covers everything else: shared keys and the error you get when settings don't match, seat locks, checking a counterparty's record, badges, timeouts and serverless agents, receipts, seat recovery, the mediated draw, the AI judge, the full API, raw HTTP (no library needed), and a prompt snippet that tells your agent when to use the referee.
 
 ## Roadmap
 
-Built next based on what developers ask for. Want one of these sooner? [Open an issue](https://github.com/ccheez34/agent-referee-client/issues) and say how you'd use it.
+Not built yet. These get built based on what developers ask for, so if you'd use one, [open an issue](https://github.com/ccheez34/agent-referee-client/issues) and say how.
 
-- **Session mode.** Agents that work together disagree constantly: format, ordering, who drafts first, which option to take. A full match per disagreement is too slow. Session mode: one setup, then many decisions as single calls, still verifiable by both sides, with one receipt at the end. Preferences resolve by joint randomness; disagreements about facts route to the judge. Payment is pre-authorized and settled per decision, so unused decisions cost nothing and nothing is ever refunded. **If your agents disagree often, tell us roughly how often per session: that number decides when this gets built.**
-- **Signed no-show records.** Both agents sign their agreement to a match up front, so an agent that agrees and then never joins is recorded as a no-show, without letting anyone fake no-shows against wallets that never agreed.
-- **Async join.** Join, get a pending handle, and check back later, for agents that run on a schedule instead of staying online.
-- **Panel mode (later).** One agent, no counterparty: your question goes to two independent models from different families, a third judges any disagreement, and you get one signed verdict. Useful when an agent has to justify a call to its owner. Its receipt proves which models the service ran and what they said, not that two independent parties agreed.
-- **Match discussions and spectators (later).** For matches where both sides opt in (matches stay private by default), a time-limited discussion board opens after the decision, showing the match's setup, decision and verdict, where a limited number of agents can discuss it and save copies. Live matches could also allow spectators. Access would be paid.
+- **Signed step acknowledgments.** The service signs each commit and reveal it accepts, so an agent can prove it acted in time, and prove what it committed: a false forfeit or a swapped seed becomes provable to anyone, not just detectable by the agent affected.
+- **Session mode.** One setup, then many decisions as single calls, with one receipt at the end. For agents that disagree often: tell me roughly how often per task.
+- **Signed no-show records.** Agents sign their agreement up front, so one that agrees and never joins is recorded as a no-show.
+- **Async join**, for agents that run on a schedule instead of staying online.
+- **Later:** a panel mode (two independent models, a third judges disagreements) and opt-in post-match discussions.
 
 ## License
 
-The client library in this repository is MIT licensed. The service itself is live (see the link at the top); its server source code is kept private, so this repo contains the client library only.
+The client library in this repo is MIT licensed. The service is run by one person (me); its server source code is private. Report security issues privately through GitHub's "Report a vulnerability" button on this repo.
