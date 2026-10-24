@@ -81,6 +81,8 @@ export interface MatchStatus {
   receipt?: Receipt;
   /** Set by seat.play(): signature + outcome + your own seed, checked for you. check.ok covers all three. */
   check?: OutcomeCheck;
+  /** Set by seat.play() and seat.submit(): this seat's signed step acknowledgments. Save them with the receipt. */
+  acks?: StepAck[];
   error?: string;
   [k: string]: unknown;
 }
@@ -106,6 +108,35 @@ export interface OutcomeCheck {
   trusts: string[];
   /** Set on the check seat.play() returns: whether the receipt's signature verified. ok includes it. */
   signed?: boolean;
+  /** Signed acknowledgments the receipt contradicts. Each pair (ack + receipt) proves it to anyone. */
+  evidence: Contradiction[];
+}
+
+/** A signed acknowledgment of one step the service accepted. Same shape as a receipt. */
+export interface StepAck {
+  payload: {
+    type: "step-ack";
+    service: string;
+    match_id: string;
+    tier: Tier;
+    seat: string;
+    step: "join" | "commit" | "reveal" | "submit";
+    accepted_at: string;
+    round?: number;
+    commitment?: string;
+    value?: string;
+    nonce?: string;
+    position_sha256?: string;
+    paid_by?: string | null;
+  };
+  signature: string | null;
+  algorithm: "Ed25519";
+  public_key: string | null;
+}
+
+export interface Contradiction {
+  reason: string;
+  ack: StepAck;
 }
 
 export interface ProofStore {
@@ -138,6 +169,8 @@ export interface AgentRefereeOptions {
   joinRetries?: number;
   /** Pin the service's receipt-signing key(s) (base64) instead of fetching GET /pubkey. */
   publicKeys?: string[];
+  /** Called with each signed step acknowledgment the moment it arrives. Persist it so your proof survives a crash. */
+  onAck?: (ack: StepAck, seat: Seat) => void | Promise<void>;
 }
 
 export class AgentReferee {
@@ -151,8 +184,8 @@ export class AgentReferee {
   recover(matchId: string, payment: string): Promise<{ seat: string; seat_token?: string; note: string; match: MatchStatus }>;
   recoverPending(store: ProofStore): Promise<{ match_id: string; seat: Seat }[]>;
   waitFor(matchId: string, fn: (st: MatchStatus) => boolean): Promise<MatchStatus>;
-  /** Checks the signature. Pass publicKeys to verify offline. */
-  verifyReceipt(receipt: Receipt, opts?: { publicKeys?: string[] }): Promise<boolean>;
+  /** Checks the signature of a receipt or a step acknowledgment. Pass publicKeys to verify offline. */
+  verifyReceipt(receipt: Receipt | StepAck, opts?: { publicKeys?: string[] }): Promise<boolean>;
 }
 
 export class Seat {
@@ -163,6 +196,8 @@ export class Seat {
   tier: Tier;
   /** This seat's own commitments and reveals, per round (memory only). */
   mine: { round?: number; value: string; nonce: string; commitment: string }[];
+  /** The service's signed acknowledgments for each step this seat took. Save them with the receipt. */
+  acks: StepAck[];
   /** Plays rounds until the match is decided. chooseMove is called once per round (RPS tiers only). */
   play(chooseMove?: () => Move): Promise<MatchStatus>;
   /** Plays exactly one commit-reveal round with this value (a move for RPS; omit for a random seed). */
@@ -173,7 +208,11 @@ export class Seat {
 }
 
 /** Pass { seat } so the check also confirms the receipt holds exactly your own commitment and reveal. */
-export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { seat?: Seat }): Promise<OutcomeCheck>;
+export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { seat?: Seat; acks?: StepAck[] }): Promise<OutcomeCheck>;
+/** Standalone, offline signature check for a receipt or step acknowledgment. */
+export function verifySignature(doc: Receipt | StepAck, publicKeys: string[]): Promise<boolean>;
+/** Every acknowledgment the receipt contradicts. No secrets needed, so anyone can run it. */
+export function findContradictions(receipt: Receipt | Receipt["payload"], acks: StepAck[]): Contradiction[];
 export function captureFetch(baseFetch?: typeof fetch, opts?: { store?: ProofStore; onPayment?: (url: string, proof: string, info: object) => void | Promise<void> }): Capture;
 export function fileProofStore(dir?: string): Required<ProofStore>;
 export function localStorageProofStore(prefix?: string): Required<ProofStore>;

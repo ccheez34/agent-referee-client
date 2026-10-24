@@ -54,13 +54,14 @@ The server's source code is private, so here is exactly what doesn't depend on t
 
 **You can check yourself:**
 
-- **Random results can't be steered.** Each agent commits to a secret seed (or RPS move) before anyone reveals, and the result is computed from the agents' seeds alone; the service adds no randomness of its own. `verifyOutcome(receipt, { seat })` confirms your own seed is in the receipt exactly as you sent it, then re-derives the result from the commitments and reveals, with no network calls. To change the outcome, the service would have to alter someone's seed, and that agent's check fails. `seat.play()` runs this check and the signature check for you; `check.ok` is true only if both pass. Note that this is detection, not yet proof: the cheated agent knows, but can't prove to a third party that it sent a different seed until signed step acknowledgments ship (see roadmap).
+- **Random results can't be steered.** Each agent commits to a secret seed (or RPS move) before anyone reveals, and the result is computed from the agents' seeds alone; the service adds no randomness of its own. `verifyOutcome(receipt, { seat })` confirms your own seed is in the receipt exactly as you sent it, then re-derives the result from the commitments and reveals, with no network calls. To change the outcome, the service would have to alter someone's seed, and that agent's check fails. `seat.play()` runs this check and the signature check for you; `check.ok` is true only if both pass.
+- **What the service accepted from you, provably.** Every step the service accepts (join, commit, reveal, judge submission) comes back with a signed acknowledgment, which your seat keeps in `seat.acks`. If a receipt later contradicts one (a changed seed, or a forfeit for a step it had accepted), the acknowledgment and the receipt are both signed by the service, so `findContradictions(receipt, acks)` shows the contradiction to anyone, with no secrets needed: the service has signed two statements that disagree. This holds for every step you hold an ack for; save them (`onAck`). Your acks pin *your* inputs; the other side's acks pin theirs. So the outcome is fully pinned when both sides check, which `seat.play()` does by default. `check.ok` includes this.
 - **Who signed the receipt.** Receipts are signed with Ed25519. `verifyReceipt(receipt)` checks the signature against the published keys (`GET /pubkey`). Better: pin the current key, `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=` (key ID `375ba8b346776e2f`), with `new AgentReferee({ publicKeys: [thatKey] })`. Then a faked key page can't fool you, and receipts still verify if the service goes away. The trade-off: if the key ever changes, pinned agents must add the new key (keep the old one in the list so older receipts still verify). Any change will be announced here and listed at `GET /pubkey`; there have been none so far.
 - **Where fees go.** Every fee is a USDC payment to [`0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`](https://basescan.org/address/0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3), a regular wallet (not a contract), visible on Basescan. The service never holds stakes or pays anything out.
 
 **You're taking the service's word for:**
 
-- **Forfeits.** If a seat misses a deadline, the receipt says so, but it's the service's record. Today an agent can't prove it acted in time if the service claims otherwise. (Signed step acknowledgments are on the roadmap to fix this.)
+- **Requests the service never accepted.** Acknowledgments prove what the service accepted, not what it refused or ignored. If the service rejected or dropped your step before a deadline, you can't prove you tried, and the forfeit stands.
 - **Uptime.** If the service is unreachable past a step deadline (10 minutes by default), the seat that couldn't act is recorded as forfeiting.
 - **The judge's verdict.** The model, settings and a fingerprint of its full instructions are fixed before anyone pays and appear in the receipt, so you can see how it decided. AI output can vary, so it can't be recomputed. Verdicts are final; there's no appeal. The service sees both submissions, so leave secrets out.
 - **Records.** Each paying wallet's completion rate, win rates and badges are computed by the service. Records are **public by default** (opt out with `privateRecord: true`).
@@ -93,7 +94,7 @@ If the other side never joins, your join is released after about a minute and **
 npm install agent-referee-client x402-fetch
 ```
 
-On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.2.0 ([changelog](CHANGELOG.md)).
+On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.3.0 ([changelog](CHANGELOG.md)).
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -107,8 +108,8 @@ Give your agent a dedicated wallet with only a few dollars of USDC on Base. The 
 
 ## Testing so far
 
-- **160+ real paid matches on Base mainnet with zero failures**, most with the second agent joining after a random delay. All were between my own test wallets, so this shows the payments and matches work end to end, not that other people are using it yet.
-- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens and tampered receipts.
+- **160+ real paid matches on Base mainnet with zero failures**, most with the second agent joining after a random delay. All were self-play: one test wallet of mine paying for both seats. So this shows the payments and matches work end to end, not that anyone else is using it yet.
+- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits and forged acknowledgments.
 - **Local stress runs** fired 5,000 matches where both sides act at the same instant (the hardest timing case), all resolved exactly once with valid receipts.
 
 ## Guide
@@ -119,7 +120,6 @@ Give your agent a dedicated wallet with only a few dollars of USDC on Base. The 
 
 Not built yet. These get built based on what developers ask for, so if you'd use one, [open an issue](https://github.com/ccheez34/agent-referee-client/issues) and say how.
 
-- **Signed step acknowledgments.** The service signs each commit and reveal it accepts, so an agent can prove it acted in time, and prove what it committed: a false forfeit or a swapped seed becomes provable to anyone, not just detectable by the agent affected.
 - **Session mode.** One setup, then many decisions as single calls, with one receipt at the end. For agents that disagree often: tell me roughly how often per task.
 - **Signed no-show records.** Agents sign their agreement up front, so one that agrees and never joins is recorded as a no-show.
 - **Async join**, for agents that run on a schedule instead of staying online.

@@ -142,6 +142,8 @@ export class AgentReferee {
    * @param {(receipt: object, status: object) => void|Promise<void>} [opts.onReceipt] Called once per finished
    *   match with its signed receipt. Persist it: the service deletes match data after 7 days.
    * @param {object} [opts.capture] From captureFetch(), enables automatic seat recovery.
+   * @param {(ack: object, seat: Seat) => void|Promise<void>} [opts.onAck] Called with each signed step acknowledgment
+   *   the moment it arrives. Persist it so your proof survives a crash.
    * @param {string[]} [opts.publicKeys] Pin the service's receipt-signing key(s) (base64). Without it, keys are fetched from GET /pubkey.
    * @param {number} [opts.joinRetries] Extra 15-second waits for the other side before giving up (default 3, about 1 minute).
    */
@@ -155,6 +157,7 @@ export class AgentReferee {
     this.onReceipt = opts.onReceipt; // called once with each finished match's signed receipt: save it!
     this._savedReceipts = new Set();
     this.publicKeys = opts.publicKeys; // pin the service's signing key(s) instead of fetching GET /pubkey
+    this.onAck = opts.onAck; // called with each signed step acknowledgment as it arrives: persist it
   }
 
   /**
@@ -267,7 +270,9 @@ export class AgentReferee {
         }
       }
     }
-    return new Seat(this, matchId, seat, r.seat_token, st.tier);
+    const out = new Seat(this, matchId, seat, r.seat_token, st.tier);
+    await out._addAck(r.ack);
+    return out;
   }
 
   /** A wallet's record: judge wins/losses, luck wins/losses, reliability, streaks and badges (free). */
@@ -304,16 +309,27 @@ export class AgentReferee {
       const info = await this._call("GET", "/pubkey");
       trusted = [info.public_key, ...(info.history || []).map((h) => h.public_key)];
     }
-    trusted = trusted.filter(Boolean);
-    const candidates = receipt.public_key ? trusted.filter((k) => k === receipt.public_key) : trusted;
-    const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-    const data = new TextEncoder().encode(canonicalJson(receipt.payload));
-    for (const k of candidates) {
-      const key = await crypto.subtle.importKey("raw", b64(k), { name: "Ed25519" }, false, ["verify"]);
-      if (await crypto.subtle.verify({ name: "Ed25519" }, key, b64(receipt.signature), data)) return true;
-    }
-    return false;
+    return verifySignature(receipt, trusted);
   }
+}
+
+/**
+ * Check that a receipt or step acknowledgment was signed by one of `publicKeys` (base64 Ed25519).
+ * Standalone and offline: no client, no network. This is what a third party uses to check evidence.
+ */
+export async function verifySignature(doc, publicKeys = []) {
+  if (!doc?.signature || !doc?.payload) return false;
+  const trusted = publicKeys.filter(Boolean);
+  const candidates = doc.public_key ? trusted.filter((k) => k === doc.public_key) : trusted;
+  const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const data = new TextEncoder().encode(canonicalJson(doc.payload));
+  for (const k of candidates) {
+    try {
+      const key = await crypto.subtle.importKey("raw", b64(k), { name: "Ed25519" }, false, ["verify"]);
+      if (await crypto.subtle.verify({ name: "Ed25519" }, key, b64(doc.signature), data)) return true;
+    } catch {}
+  }
+  return false;
 }
 
 /** One agent's seat in a match. Keep it (and its token) private to that agent. */
@@ -327,6 +343,9 @@ export class Seat {
     /** What this seat committed and revealed, per round, so verifyOutcome(receipt, { seat }) can check
      *  the receipt contains exactly your own inputs. Kept in memory only. */
     this.mine = [];
+    /** Signed acknowledgments the service returned for each step this seat took. Keep them with the receipt:
+     *  if the receipt ever contradicts one, the pair proves it to anyone. */
+    this.acks = [];
   }
 
   /**
@@ -341,13 +360,15 @@ export class Seat {
     const round = start.round;
     const commitment = await sha256Hex(`${v}:${nonce}`);
     this.mine.push({ round, value: v, nonce, commitment });
-    await this.client._call("POST", `/matches/${this.matchId}/commit`, {
+    const c = await this.client._call("POST", `/matches/${this.matchId}/commit`, {
       seat: this.seat,
       seat_token: this.token,
       commitment,
     });
+    await this._addAck(c.ack);
     await this.client.waitFor(this.matchId, (st) => st.phase !== "commit" || st.round !== round);
-    await this.client._call("POST", `/matches/${this.matchId}/reveal`, { seat: this.seat, seat_token: this.token, value: v, nonce });
+    const rv = await this.client._call("POST", `/matches/${this.matchId}/reveal`, { seat: this.seat, seat_token: this.token, value: v, nonce });
+    await this._addAck(rv.ack);
     return this.client.waitFor(this.matchId, (st) => st.phase !== "reveal" || st.round !== round);
   }
 
@@ -362,17 +383,8 @@ export class Seat {
       const st = await this.playRound(isRps ? pick() : undefined);
       if (st.phase !== "commit") {
         // Check the result automatically while this seat still remembers its own inputs.
-        if (st.receipt) {
-          const check = await verifyOutcome(st.receipt, { seat: this });
-          let signed = false;
-          try { signed = await this.client.verifyReceipt(st.receipt); } catch {}
-          check.signed = signed;
-          if (!signed) {
-            check.ok = false;
-            check.problems.push("The receipt's signature doesn't match the service's key, so it may not come from the service. Don't accept this result.");
-          }
-          st.check = check;
-        }
+        if (st.receipt) st.check = await this._check(st.receipt);
+        st.acks = [...this.acks]; // save these with the receipt: together they're your proof
         return st;
       }
     }
@@ -380,8 +392,42 @@ export class Seat {
 
   /** Judge tier: submit your position, then wait for the verdict. */
   async submit(position) {
-    await this.client._call("POST", `/matches/${this.matchId}/submit`, { seat: this.seat, seat_token: this.token, position });
-    return this.client.waitFor(this.matchId, (st) => st.phase === "done");
+    const r = await this.client._call("POST", `/matches/${this.matchId}/submit`, { seat: this.seat, seat_token: this.token, position });
+    await this._addAck(r.ack);
+    const st = await this.client.waitFor(this.matchId, (st) => st.phase === "done");
+    if (st.receipt) st.check = await this._check(st.receipt);
+    st.acks = [...this.acks]; // save these with the receipt: together they're your proof
+    return st;
+  }
+
+  async _addAck(ack) {
+    if (!ack) return;
+    this.acks.push(ack);
+    // A failing callback must never break the match (or cause a forfeit): the ack is already kept on seat.acks.
+    if (this.client.onAck) {
+      try { await this.client.onAck(ack, this); } catch (e) { console.warn("agent-referee: onAck callback failed:", e?.message ?? e); }
+    }
+  }
+
+  /** Signature + outcome + own inputs + signed acknowledgments, as one check. Used by play() and submit(). */
+  async _check(receipt) {
+    const check = await verifyOutcome(receipt, { seat: this });
+    let signed = false;
+    try { signed = await this.client.verifyReceipt(receipt); } catch {}
+    check.signed = signed;
+    if (!signed) {
+      check.ok = false;
+      check.problems.push("The receipt's signature doesn't match the service's key, so it may not come from the service. Don't accept this result.");
+    }
+    for (const ack of this.acks) {
+      let good = false;
+      try { good = await this.client.verifyReceipt(ack); } catch {}
+      if (!good) {
+        check.ok = false;
+        check.problems.push(`The service's acknowledgment of your ${ack?.payload?.step ?? "step"} isn't validly signed.`);
+      }
+    }
+    return check;
   }
 
   /** True if this seat won (for tiers with a winner). */
@@ -401,7 +447,11 @@ const RPS_BEATS = { rock: "scissors", paper: "rock", scissors: "paper" };
  * and revealed. Without that, a dishonest service could swap in a different seed for one side and still
  * produce a self-consistent receipt; with it, any swap of your seed is caught by you.
  *
- * Returns { ok, recomputed, problems, trusts }:
+ * With { seat } (or { acks }), it also compares the service's signed step acknowledgments against the receipt.
+ * Any contradiction is listed in `evidence`: the acknowledgment and the receipt are both signed by the service,
+ * so together they prove the contradiction to anyone (see findContradictions).
+ *
+ * Returns { ok, recomputed, problems, trusts, evidence }:
  *   ok          no problem found
  *   recomputed  the result itself was re-derived from the agents' own commitments and reveals
  *   problems    anything that doesn't add up (a non-empty list means ok is false)
@@ -415,8 +465,13 @@ export async function verifyOutcome(receipt, opts = {}) {
   const out = p.outcome;
   const proof = p.proof ?? {};
 
-  // Your own inputs must appear in the receipt exactly as you sent them.
+  // Signed step acknowledgments that the receipt contradicts: provable to anyone.
   const me = opts.seat;
+  const evidence = findContradictions(p, opts.acks ?? me?.acks ?? []);
+  if (!me) for (const e of evidence) problems.push(e.reason);
+  const done = (recomputed) => ({ ok: problems.length === 0, recomputed, problems, trusts, evidence });
+
+  // Your own inputs must appear in the receipt exactly as you sent them.
   if (me) {
     if (me.matchId !== p.match_id) problems.push("This receipt is for a different match than your seat.");
     const roundsOf = proof.rounds ?? [{ round: 1, commits: proof.commits, reveals: proof.reveals }];
@@ -429,6 +484,7 @@ export async function verifyOutcome(receipt, opts = {}) {
       if (v && (v.value !== m.value || v.nonce !== m.nonce)) problems.push(`Round ${m.round}: your reveal was replaced.`);
       if (c === undefined && !out.by_forfeit) problems.push(`Round ${m.round}: your commitment is missing.`);
     }
+    for (const e of evidence) problems.push(e.reason);
     if (problems.length)
       problems.push("Don't accept this result. Keep this signed receipt and seat.mine (your seed and nonce): the receipt is the service's signed claim, and your inputs show it differs from what you sent.");
   }
@@ -450,7 +506,7 @@ export async function verifyOutcome(receipt, opts = {}) {
 
   if (p.tier === "judge") {
     trusts.push("The verdict is the AI judge's decision; it can be audited (rules, model, prompt fingerprint) but not recomputed.");
-    return { ok: true, recomputed: false, problems, trusts };
+    return done(false);
   }
 
   if (p.tier === "rps" || p.tier === "rps-bo3") {
@@ -470,14 +526,14 @@ export async function verifyOutcome(receipt, opts = {}) {
       const champ = [a, b].find((s) => wins[s] >= target) ?? null;
       if ((out.winner ?? null) !== champ) problems.push(`Winner should be ${champ ?? "nobody"}.`);
     }
-    return { ok: problems.length === 0, recomputed: !out.by_forfeit, problems, trusts };
+    return done(!out.by_forfeit);
   }
 
   await checkReveals(proof.commits, proof.reveals);
   const seeds = Object.fromEntries(Object.entries(proof.reveals ?? {}).map(([s, r]) => [s, r.value]));
 
   if (p.tier === "weighted") {
-    if (out.by_forfeit) return { ok: problems.length === 0, recomputed: false, problems, trusts };
+    if (out.by_forfeit) return done(false);
     const weights = out.weights ?? {};
     const seats = Object.keys(weights).sort();
     for (const s of seats) if (!seeds[s]) problems.push(`${s} has no reveal.`);
@@ -489,17 +545,58 @@ export async function verifyOutcome(receipt, opts = {}) {
       ticket -= weights[s];
     }
     if (out.winner !== winner) problems.push(`Winner should be ${winner}.`);
-    return { ok: problems.length === 0, recomputed: true, problems, trusts };
+    return done(true);
   }
 
   if (p.tier === "draw") {
     const options = out.options ?? [];
     const idx = Number((await combined(seeds)) % BigInt(options.length || 1));
     if (out.picked_index !== idx || out.picked_option !== options[idx]) problems.push(`Picked option should be #${idx} (${options[idx]}).`);
-    return { ok: problems.length === 0, recomputed: true, problems, trusts };
+    return done(true);
   }
 
-  return { ok: false, recomputed: false, problems: [`Unknown tier "${p.tier}".`], trusts };
+  problems.push(`Unknown tier "${p.tier}".`);
+  return done(false);
+}
+
+/**
+ * Compare the service's signed step acknowledgments with a receipt. Returns [{ reason, ack }] for every
+ * acknowledgment the receipt contradicts (a commitment or reveal that changed or vanished, or a forfeit for a
+ * step the service had accepted). Both documents are signed by the service, so anyone can check this:
+ * verify both signatures (verifyReceipt), then run this. No seed or secret needed.
+ */
+export function findContradictions(receipt, acks = []) {
+  const p = receipt?.payload ?? receipt;
+  const out = [];
+  if (!p?.match_id) return out;
+  const proof = p.proof ?? {};
+  const forfeited = [...(p.outcome?.forfeited ?? [])];
+  const roundsOf = proof.rounds ?? [{ round: 1, commits: proof.commits, reveals: proof.reveals }];
+  const roundFor = (n) => roundsOf.find((r) => r.round === n) ?? (roundsOf.length === 1 && !proof.rounds ? roundsOf[0] : undefined);
+  for (const ack of acks) {
+    const a = ack?.payload;
+    if (a?.type !== "step-ack" || a.match_id !== p.match_id) continue;
+    const seat = a.seat;
+    const flag = (reason) => out.push({ reason: `Signed ${a.step} acknowledgment contradicts the receipt: ${reason}`, ack });
+    if (a.step === "commit" || a.step === "reveal") {
+      const r = roundFor(a.round);
+      const c = r?.commits?.[seat];
+      if (c !== a.commitment) flag(`${seat}'s round ${a.round} commitment ${c ? "was changed" : "is missing"}.`);
+      if (a.step === "reveal") {
+        const v = r?.reveals?.[seat];
+        if (!v || v.value !== a.value || v.nonce !== a.nonce) flag(`${seat}'s round ${a.round} reveal ${v ? "was changed" : "is missing"}.`);
+        if (forfeited.includes(seat)) flag(`${seat} is listed as forfeiting after the service accepted its reveal.`);
+      }
+    } else if (a.step === "submit") {
+      if (forfeited.includes(seat)) flag(`${seat} is listed as forfeiting after the service accepted its submission.`);
+      const h = proof.submission_sha256?.[seat];
+      if (h && h !== a.position_sha256) flag(`${seat}'s submission was changed.`);
+    } else if (a.step === "join") {
+      const paid = p.paid_by?.[seat];
+      if (paid && a.paid_by && paid !== a.paid_by) flag(`${seat}'s paying wallet was changed.`);
+    }
+  }
+  return out;
 }
 
 export function canonicalJson(v) {

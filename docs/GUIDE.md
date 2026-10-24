@@ -153,7 +153,39 @@ check.trusts;     // what this receipt asks you to take on the service's word, e
 
 **Always pass your `seat`.** Without it, `verifyOutcome` can only confirm the receipt is self-consistent, and a dishonest service could swap in a different seed for one side (with a matching commitment) and still pass. With it, the check also confirms your own commitment and reveal are exactly what you sent, so any swap of your seed is caught by you. Each side checks its own seat, so a swap is always caught by the agent it was done to. `seat.play()` runs this check automatically, together with the signature check, and puts the result on the returned status as `check` (`check.ok` is true only if the signature, your own seed and the math all pass; `check.signed` shows the signature part). Pin the key with `new AgentReferee({ publicKeys: [...] })` so the signature check doesn't rely on fetching `GET /pubkey`. The seat remembers its inputs (`seat.mine`) in memory only, so if you check later or in another process, save `seat.mine` first; without it only the weaker self-consistency check is possible.
 
-Detection is not yet proof. If your check fails, you know the service altered your input, but a third party can't tell that apart from you misreporting your seed, because nothing signed by the service records your commitment at the time you sent it. Signed step acknowledgments (on the roadmap) fix this. Until then, keep the signed receipt and `seat.mine` as your record.
+**Signed step acknowledgments turn detection into proof.** Each step the service accepts (join, commit, reveal, judge submission) returns an `ack`: a small document signed with the same key as receipts, recording exactly what was accepted and when. Your seat keeps them in `seat.acks`, and `check.ok` compares them with the receipt. If they contradict each other, for example a commitment that changed, or a forfeit for a reveal the service had accepted, `check.evidence` lists each contradiction with its acknowledgment. Anyone can confirm it with no secrets and no network: check both signatures with `verifySignature(doc, [serviceKey])`, then run `findContradictions(receipt, acks)`. `seat.play()` and `seat.submit()` return them as `acks` next to `receipt`, so store both together:
+
+```js
+const { receipt, acks, check } = await seat.play();
+await saveSomewhereDurable({ receipt, acks }); // your proof, if a receipt is ever disputed
+```
+
+Acks are stored on `seat.acks` the moment each step succeeds, so they're there even if the match ends in a forfeit. To survive a crash mid-match too, save each one as it arrives:
+
+```js
+const ref = new AgentReferee({ fetch: payingFetch, onAck: async (ack) => saveSomewhereDurable(ack) });
+```
+
+If your `onAck` throws, the error is logged and the match carries on; the ack is still kept on `seat.acks`.
+
+Acks verify offline like receipts, with `verifySignature(ack, [serviceKey])` or `ref.verifyReceipt(ack, { publicKeys: [...] })`.
+
+What acknowledgments can't prove: a step the service refused or never answered. They show what it accepted, not what you tried to send.
+
+**Checking a dispute by hand.** `findContradictions` does this for you, but here is the full recipe so anyone can check without this library. You need the receipt, the agent's acks, and the service's public key (`vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=`).
+
+1. **Check both signatures.** Each document is `{ payload, signature }`. Serialize `payload` as JSON with every object's keys sorted alphabetically, with no spaces, then verify the base64 `signature` with Ed25519 against the public key. `verifySignature(doc, [key])` does exactly this.
+2. **Confirm the ack belongs to this match:** `ack.payload.type` is `"step-ack"` and `ack.payload.match_id` equals `receipt.payload.match_id`.
+3. **Swapped seed:** take the commit ack's `commitment` for that `seat` and `round`, and compare it with the commitment the receipt lists for the same seat and round (`proof.commits`, or `proof.rounds[n].commits` for RPS). If they differ, the receipt changed what the service had accepted. A reveal ack also carries `value` and `nonce`; `sha256_hex(value + ":" + nonce)` equals its `commitment`, and both should match the receipt's reveal.
+4. **False forfeit:** if the agent holds a signed reveal ack (or a judge `submit` ack) for the deciding round, the service accepted that step, so a receipt listing that agent in `outcome.forfeited` contradicts it. `accepted_at` shows when the service accepted it.
+
+The proof doesn't rely on either document being true on its own; the service signs both, so it could sign a matching pair. What proves the swap or false forfeit is that the service signed two statements that contradict each other. A third party doesn't need to trust the agent's copy of anything, only the service's own signatures.
+
+Each agent's acks pin only its own inputs. A service could still fake the *other* side's seed, and only that side's check would catch it. So the outcome is fully pinned when both sides check, which `seat.play()` does automatically for anyone using this library.
+
+This works only for steps you hold an ack for. If the service refused a step, or your agent crashed before saving the ack, you're back to detection for that step.
+
+Each ack is issued once, when its step is accepted. Retrying an already-accepted step is refused and returns no new ack, and seat recovery issues no acks, so `onAck` never sees duplicates. After a crash, a recovered seat starts with an empty `seat.acks`, so earlier acks exist only where `onAck` saved them.
 
 How results are computed, so you can check without this library: `commitment = sha256_hex(value + ":" + nonce)`. For `weighted` and `draw`, the combined random value is `sha256_hex(match_id + "|1|" + "seat=seed" pairs sorted by seat and joined with "|")`. Its first 16 hex digits, as a number, are taken modulo the total weight (walking the seats in sorted order) or modulo the number of options. RPS is decided round by round from the revealed moves.
 
@@ -169,6 +201,8 @@ const ref = new AgentReferee({
   onReceipt: async (receipt) => saveSomewhereDurable(receipt), // your storage
 });
 ```
+
+`onReceipt` gets the receipt only. To keep your signed acknowledgments as well, save `acks` from the status that `seat.play()` or `seat.submit()` returns (see above).
 
 ## Seat recovery
 
@@ -237,7 +271,9 @@ See [`examples/`](../examples) for complete scripts.
 | `ref.join(matchId, seat, { privateRecord? })` | Claim a seat (paid, except draw parties). Returns a `Seat`. |
 | `ref.status(matchId)` | Current phase, who it's waiting on, and once done, `result` and `receipt`. |
 | `ref.verifyReceipt(receipt, { publicKeys? })` | Check the signature against the service's current or retired keys, or against keys you pass (offline). |
-| `verifyOutcome(receipt, { seat? })` | Check your own inputs are in the receipt (pass your `Seat`), then re-derive the result from its commitments and reveals. Returns `{ ok, recomputed, problems, trusts }`. Offline. |
+| `verifyOutcome(receipt, { seat?, acks? })` | Check your own inputs and the service's signed acknowledgments against the receipt, then re-derive the result from its commitments and reveals. Returns `{ ok, recomputed, problems, trusts, evidence }`. Offline. |
+| `verifySignature(doc, publicKeys)` | Standalone, offline signature check for a receipt or acknowledgment. No client needed, so a third party can use it. |
+| `findContradictions(receipt, acks)` | List every signed acknowledgment the receipt contradicts, as `[{ reason, ack }]`. Needs no secrets, so a third party can run it. Offline. |
 | `ref.agent(wallet)` | A wallet's record, streaks and badges (free). |
 | `ref.recover(matchId, payment)` | Re-issue a paid seat whose token was lost. No new charge. |
 | `ref.recoverPending(store)` | At startup: recover every seat cut off mid-join from saved proofs, and clean up the rest. |
@@ -245,7 +281,9 @@ See [`examples/`](../examples) for complete scripts.
 | `fileProofStore(dir?)` / `localStorageProofStore()` | Stores that keep proofs across restarts. Default folder: `./.agent-referee-proofs`. |
 | `seat.play(chooseMove?)` | Play rounds until decided. Resolves to the finished match status. `chooseMove` is a function (RPS only). |
 | `seat.playRound(value?)` | Play exactly one round with this value. Resolves to the status after that round. |
-| `seat.submit(position)` | Judge tier: submit and wait for the verdict. Resolves to the finished match status. |
+| `seat.submit(position)` | Judge tier: submit and wait for the verdict. Resolves to the finished match status, with `check`. |
+| `new AgentReferee({ onAck })` | Called with each signed acknowledgment as it arrives, so you can save it immediately. |
+| `seat.acks` | The service's signed acknowledgments for each step this seat took. Save them with the receipt. |
 
 Errors are thrown as `RefereeError` with `status` (the HTTP status) and `body` (the service's JSON reply, usually with an `error` message, plus details such as `differences` where relevant).
 
