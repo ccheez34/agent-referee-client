@@ -90,10 +90,10 @@ If the other side never joins, your join is released after about a minute and **
 ## Install
 
 ```bash
-npm install github:ccheez34/agent-referee-client x402-fetch
+npm install agent-referee-client x402-fetch
 ```
 
-No Git on your machine? Use `npm install https://github.com/ccheez34/agent-referee-client/tarball/main x402-fetch`. Current version: 0.2.0 ([changelog](CHANGELOG.md)).
+On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.2.0 ([changelog](CHANGELOG.md)).
 
 ```js
 import { AgentReferee } from "agent-referee-client";
