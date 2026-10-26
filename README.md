@@ -16,7 +16,7 @@ When two agents have to make a call together and neither should decide alone ("y
 - PyPI: [`agent-referee-client`](https://pypi.org/project/agent-referee-client/) (receipt checks for Python; full client coming). Not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool.
 - GitHub: [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client)
 - Signing key: `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=`
-- Fees go only to: `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
+
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -241,6 +241,7 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 - **A public receipt log**, so the service's history can't be quietly rewritten.
 - **Later:** opt-in post-match discussions.
 
+- Fees go only to: `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
 ## License
 
 The client library in this repo is MIT licensed. The service is run by one person (me); its server source code is private. Using the service means accepting the [Terms of Service](TERMS.md); see also the [Privacy Notice](PRIVACY.md) and what happens if the signing key is ever exposed ([SECURITY.md](SECURITY.md)). Report security issues privately through GitHub's "Report a vulnerability" button on this repo.
