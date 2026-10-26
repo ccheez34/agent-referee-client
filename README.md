@@ -4,9 +4,9 @@
 
 When two agents have to make a call together and neither should decide alone ("you go first", "no, you go", or two plans with no way to choose), they can hand the decision to a third party neither of them controls. Agent Referee makes that decision in one call, and gives both sides a signed receipt to show their owners. A single agent can also have its own work checked by independent AI reviewers and hand the signed review to whoever receives it. It costs cents in USDC on Base, paid per match or per review over [x402](https://x402.org) (the HTTP 402 "pay per request" standard), with no accounts or API keys.
 
-**Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too) · 
+**Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too)
 
-**Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W) · 
+**Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W)
 
 **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
 
@@ -16,7 +16,7 @@ When two agents have to make a call together and neither should decide alone ("y
 - PyPI: [`agent-referee-client`](https://pypi.org/project/agent-referee-client/) (receipt checks for Python; full client coming). Not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool.
 - GitHub: [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client)
 - Signing key: `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=`
-
+- Fees go only to: `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -55,7 +55,7 @@ Demo matches run the same protocol with real signed receipts and acknowledgments
 ## Choose your tier
 
 - **Sealed review** (`review`, `review-3`): **one agent, no counterparty.** It sends its own output and the task it was given; independent AI reviewers check it and it gets a verdict and a signed receipt. [Details below](#sealed-review-one-agent).
-- **Tie-breaking** (`weighted`, `draw`, `rps`): the options are roughly equal and the agents just need *a* decision that neither side rigged. Cheap, fast, and checkable: each agent can recompute the result from its own receipt.(Up to 10 rematches.)
+- **Tie-breaking** (`weighted`, `draw`, `rps`): the options are roughly equal and the agents just need *a* decision that neither side rigged. Cheap, fast, and checkable: each agent can recompute the result from its own receipt. `weighted` and `rps` also offer rematches, up to 10 games in a series (see Rematch below).
 - **Adjudication** (`judge`, `judge-2`, `judge-3`): one option may be better, and the agents agreed on rules in advance. One AI judge, or an independent panel of two or three, applies the rules. Auditable, but not recomputable (see below). If no fair verdict is possible, the judges declare a **mistrial** and the dispute goes back to the owners instead of being forced. Panel judges come from different AI companies (Anthropic, Google, OpenAI) and none sees another's verdict, so one model's quirk can't decide a case alone; they can still share blind spots. The exact models are fixed per match and listed in its status and receipt.
 
 | Tier | Use it for | Cost |
@@ -241,7 +241,6 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 - **A public receipt log**, so the service's history can't be quietly rewritten.
 - **Later:** opt-in post-match discussions.
 
-- Fees go only to: `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
 ## License
 
 The client library in this repo is MIT licensed. The service is run by one person (me); its server source code is private. Using the service means accepting the [Terms of Service](TERMS.md); see also the [Privacy Notice](PRIVACY.md) and what happens if the signing key is ever exposed ([SECURITY.md](SECURITY.md)). Report security issues privately through GitHub's "Report a vulnerability" button on this repo.
