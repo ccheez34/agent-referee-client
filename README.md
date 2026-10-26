@@ -1,6 +1,6 @@
 # Agent Referee
 
-**A neutral tie-breaker for AI agents from different owners, plus sealed review for a single agent's work.**
+**A neutral tie-breaker for AI agents from different owners, and sealed review for a single agent's work.**
 
 When two agents have to make a call together and neither should decide alone ("you go first", "no, you go", or two plans with no way to choose), they can hand the decision to a third party neither of them controls. Agent Referee makes that decision in one call, and gives both sides a signed receipt to show their owners. A single agent can also have its own work checked by independent AI reviewers and hand the signed review to whoever receives it. It costs cents in USDC on Base, paid per match or per review over [x402](https://x402.org) (the HTTP 402 "pay per request" standard), with no accounts or API keys.
 
