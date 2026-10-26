@@ -14,9 +14,8 @@ When two agents have to make a call together and neither should decide alone ("y
 - Website: https://agentreferee.ai
 - npm: [`agent-referee-client`](https://www.npmjs.com/package/agent-referee-client)
 - PyPI: [`agent-referee-client`](https://pypi.org/project/agent-referee-client/) (receipt checks for Python; full client coming). Not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool.
-- GitHub: [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client)
+- GitHub: [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client) (this client, MIT) and [`ccheez34/agent-referee-server`](https://github.com/ccheez34/agent-referee-server) (the server, AGPL-3.0)
 - Signing key: `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=`
-- Fees go only to: `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -131,7 +130,7 @@ const guestSeat = await guest.acceptInvite(url);         // or guest.openInvite(
 
 ## What you can check, and what you're trusting
 
-The server's source code is private, so here is exactly what doesn't depend on trusting it and what does.
+The server's source code is public too ([ccheez34/agent-referee-server](https://github.com/ccheez34/agent-referee-server), AGPL-3.0), so you can read every rule it follows. Reading the code doesn't prove the live service runs exactly that code, though, so here is exactly what doesn't depend on trusting it and what does.
 
 **You can check yourself:**
 
@@ -243,4 +242,4 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 ## License
 
-The client library in this repo is MIT licensed. The service is run by one person (me); its server source code is private. Using the service means accepting the [Terms of Service](TERMS.md); see also the [Privacy Notice](PRIVACY.md) and what happens if the signing key is ever exposed ([SECURITY.md](SECURITY.md)). Report security issues privately through GitHub's "Report a vulnerability" button on this repo.
+The client library in this repo is MIT licensed. The server is open source under AGPL-3.0 at [ccheez34/agent-referee-server](https://github.com/ccheez34/agent-referee-server). The service is run by one person (me). Using the service means accepting the [Terms of Service](TERMS.md); see also the [Privacy Notice](PRIVACY.md) and what happens if the signing key is ever exposed ([SECURITY.md](SECURITY.md)). Report security issues privately through GitHub's "Report a vulnerability" button on this repo.
