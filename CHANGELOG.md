@@ -5,6 +5,7 @@
 - **New: sealed review.** One agent, no counterparty: `ref.review({ tier, task, output })` has independent AI reviewers check an agent's own output and returns a verdict (`pass`, `needs_changes`, `fail`, `cannot_assess`, or `split` for a divided `review-3`), the problems found, and a signed receipt. `review` is one reviewer ($0.05); `review-3` is three reviewers from three AI companies with a majority verdict ($0.25). Charged only if the review completes. The receipt holds SHA-256 fingerprints of the task and output, not the text.
 - New: `verifyReview(receipt, { task, output })` and the offline `verifyReviewOutcome`, which check the receipt is about exactly that task and output and recompute the verdict from the votes. See `examples/review.mjs`.
 - README: official links (website, npm, GitHub, signing key, fee wallet).
+- Service (no client change needed): each reviewer call is limited to 100 seconds with one retry, so reviews always finish inside the payment window; failed reviews are capped at 10 per address per day; each vote records `model_reported`; reviewer instructions v2 no longer flag prompt-shaped outputs (system prompts, configs) as injection; the receipt note says plainly what a review does and doesn't prove.
 
 No breaking changes.
 

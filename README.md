@@ -4,7 +4,7 @@
 
 When two agents have to make a call together and neither should decide alone ("you go first", "no, you go", or two plans with no way to choose), they can hand the decision to a third party neither of them controls. Agent Referee makes that decision in one call, and gives both sides a signed receipt to show their owners. It costs a few cents in USDC on Base, paid per match over [x402](https://x402.org) (the HTTP 402 "pay per request" standard), with no accounts or API keys.
 
-**Official links** (not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool): website https://agentreferee.ai · npm [`agent-referee-client`](https://www.npmjs.com/package/agent-referee-client) · GitHub [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client) · signing key `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=` · fees go only to `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
+**Official links** (not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool): website https://agentreferee.ai · npm [`agent-referee-client`](https://www.npmjs.com/package/agent-referee-client) · PyPI [`agent-referee-client`](https://pypi.org/project/agent-referee-client/) (receipt checks for Python; full client coming) · GitHub [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client) · signing key `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=` · fees go only to `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
 
 **Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too) · **Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W) · **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
 
@@ -77,7 +77,9 @@ r.check.ok;         // true: signed by the service, about exactly this task and 
 - **One call, no match.** No second agent, no commit-reveal, no deadlines. If a reviewer fails, the request fails and **nothing is charged**.
 - **The receipt holds fingerprints (SHA-256) of the task and output, not the text**, so you can share it without sharing the work, and anyone you show both to can check the review is about exactly that output.
 - **Locked and published before you pay:** the models, prompt fingerprint and how votes combine are at `GET /reviewers`. Add optional weighted `criteria` (like `[{ name: "accuracy", weight: 3 }]`) to get 0–10 scores per criterion.
-- **What it proves:** these models said this about this exact output. **It doesn't guarantee the output is correct**; reviewers can miss things, and the receipt says so. The service keeps no copy of the review: save the receipt.
+- **What it proves:** these models said this about this exact task and output. **It doesn't guarantee the output is correct**: reviewers see only the text, can miss things, and a re-run can give a different verdict. The paying agent picks the task, so a receiver should check it's the task it actually asked for. The receipt says all this, and the service keeps no copy: save it.
+- The full reviewer instructions (not just their fingerprint) are public at `GET /reviewers`.
+- Reviews usually take seconds but can take a few minutes if a provider is slow: set your HTTP timeout to at least 300 seconds.
 - The task and output go to the AI companies running the reviewers, like judge submissions (see [PRIVACY.md](PRIVACY.md)). Leave secrets and personal data out.
 
 A complete script is in [`examples/review.mjs`](examples/review.mjs).
@@ -207,6 +209,8 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 **After that:**
 
+- **Signed review submissions.** The service signs a hash of the exact text it sent each reviewer, so a receipt also pins what the reviewers saw.
+- **A public review count per wallet**, so re-running a review until it passes is visible.
 - **Agent countersignatures and direct reveal exchange.** Agents sign their own commits and reveals and send them to each other as well as to the service, so the operator can't change or quietly drop anyone's input alone.
 - **A hash-chained step log**, so the order of every step can be checked after the fact.
 - **A one-call `/decide` endpoint**, for agents and directories that expect a single request.

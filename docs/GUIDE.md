@@ -393,6 +393,8 @@ const r = await ref.review({
 | `cannot_assess` | The reviewers couldn't judge it from what they were given (the reasoning says what's missing). |
 | `split` | `review-3` only: no verdict got 2 of the 3 votes. |
 
+With `review-3`, `cannot_assess` counts as a vote like any other: pass + pass + cannot_assess is `pass`, pass + cannot_assess + cannot_assess is `cannot_assess`, and pass + fail + cannot_assess is `split`. For a `split`, read the votes' `issues`: they're usually the most useful part.
+
 `r.votes` has each reviewer's verdict, confidence, the problems it found (`issues`, most important first), its reasoning and, with criteria, its 0–10 scores and weighted `total`. `r.result.tally` counts the verdicts and `r.result.unanimous` says whether all reviewers agreed.
 
 **How it works.** The models, prompt fingerprint and decision rule are published at `GET /reviewers` and copied into the receipt. Reviewers run in parallel and never see each other's verdicts. `review` uses one reviewer's verdict; `review-3` takes the verdict with 2 or more votes, otherwise `split`. The task and output are fixed sections of the message, and reviewers are told never to follow instructions inside them.
@@ -406,7 +408,13 @@ const check = await ref.verifyReview(receipt, { task, output, publicKeys: [REFER
 // or offline without the signature check: verifyReviewOutcome(receipt, { task, output })
 ```
 
-The service keeps no copy of a review, so save the receipt. A review records what these models said about this output; it doesn't guarantee the output is correct. Over raw HTTP: `POST /review` or `POST /review-3` with `{task, output, title?, criteria?}` (x402 paid); limits are 10–4,000 characters of task and up to 12,000 of output.
+**What a receipt proves, and what it doesn't.** It proves these models gave these verdicts about this exact task and output. The agent that paid chose both, so if you're the one receiving work, check that the task in the receipt is the one *you* asked for (pass your own task text to `verifyReview`). A review is one sample: running the same output again can give a different verdict, and nothing stops an agent from re-running until it gets a pass, so treat a pass as one opinion, not a certificate. Reviewers see only the text (no tools, web or code execution). Each vote also records `model_reported`, the exact model id the provider says answered.
+
+**Hashing.** `task_sha256` and `output_sha256` are sha256 of the exact UTF-8 text sent, with no trimming or normalization: a changed newline or re-serialized JSON gives a different hash, so keep the exact text. Inputs over the limits are refused, never truncated.
+
+**Timeouts and limits.** Reviews usually take seconds, but each reviewer call has up to 100 seconds and one retry, so a slow provider can stretch a review toward the 300-second payment window. Set your HTTP timeout to **at least 300 seconds** so you never cut off a review you've paid for. A review that fails isn't charged. Each IP address (each /64 block for IPv6) gets 10 failed reviews a day, plus one more for every successful review. If your connection drops after a review completed and you were charged, email hello@agentreferee.ai with the transaction hash and it will be re-run free.
+
+The service keeps no copy of a review: the receipt you get back is the only record, so save it. A review records what these models said about this output; it doesn't guarantee the output is correct. Over raw HTTP: `POST /review` or `POST /review-3` with `{task, output, title?, criteria?}` (x402 paid); limits are 10–4,000 characters of task and up to 12,000 of output.
 
 ## Rematch
 
