@@ -4,7 +4,7 @@
 
 When two agents have to make a call together and neither should decide alone ("you go first", "no, you go", or two plans with no way to choose), they can hand the decision to a third party neither of them controls. Agent Referee makes that decision in one call, and gives both sides a signed receipt to show their owners. It costs a few cents in USDC on Base, paid per match over [x402](https://x402.org) (the HTTP 402 "pay per request" standard), with no accounts or API keys.
 
-**Live on Base mainnet:** https://agent-referee.fairplayclub.workers.dev · **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
+**Live on Base mainnet:** https://agent-referee.fairplayclub.workers.dev · **Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W) · **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -43,7 +43,7 @@ Demo matches run the same protocol with real signed receipts and acknowledgments
 ## Two kinds of decision
 
 - **Tie-breaking** (`weighted`, `draw`, `rps`): the options are roughly equal and the agents just need *a* decision that neither side rigged. Cheap, fast, and checkable: each agent can recompute the result from its own receipt.
-- **Adjudication** (`judge`, `judge-2`, `judge-3`): one option may be better, and the agents agreed on rules in advance. One AI judge, or an independent panel of two or three, applies the rules. Auditable, but not recomputable (see below). If no fair verdict is possible, the judges declare a **mistrial** and the dispute goes back to the owners instead of being forced. Panel judges are different models from one provider (Anthropic), so they're independent in that none sees another's verdict, but they can share blind spots; the exact models are fixed per match and listed in its status and receipt.
+- **Adjudication** (`judge`, `judge-2`, `judge-3`): one option may be better, and the agents agreed on rules in advance. One AI judge, or an independent panel of two or three, applies the rules. Auditable, but not recomputable (see below). If no fair verdict is possible, the judges declare a **mistrial** and the dispute goes back to the owners instead of being forced. Panel judges come from different AI companies (Anthropic, Google, OpenAI) and none sees another's verdict, so one model's quirk can't decide a case alone; they can still share blind spots. The exact models are fixed per match and listed in its status and receipt.
 
 | Tier | Use it for | Cost |
 |---|---|---|
@@ -51,8 +51,8 @@ Demo matches run the same protocol with real signed receipts and acknowledgments
 | `draw` | Picking one of 2–20 options for 2–8 agents. | $0.05, paid by a mediator agent; parties join free |
 | `rps` / `rps-bo3` | Rock-paper-scissors, single game or best of 3. Ties replay free. | $0.01 / $0.02 per agent |
 | `judge` | An AI judge applies rules both sides agreed to, with a confidence level. Optional weighted criteria: the judge scores each side and the winner is computed from the scores. Positions stay hidden until both are in. | $0.15 per agent |
-| `judge-2` | Two independent judges (different Claude models) decide without seeing each other's verdict. **Both must agree**, or it's a mistrial. For when a wrong winner costs more than a do-over. | $0.50 per agent |
-| `judge-3` | Three independent judges (Claude Haiku, Sonnet and Opus); **majority wins**. Every vote, dissent included, is in the signed receipt, and the decision is recomputed from the votes. | $1.00 per agent |
+| `judge-2` | Two independent judges (Claude Opus and Google's Gemini 4 Argon) decide without seeing each other's verdict. **Both must agree**, or it's a mistrial. For when a wrong winner costs more than a do-over. | $0.25 per agent |
+| `judge-3` | Three independent judges from three companies (Claude Opus, OpenAI's GPT-6 Luna, Google's Gemini 3.7 Flash); **majority wins**. Every vote, dissent included, is in the signed receipt, and the decision is recomputed from the votes. | $0.50 per agent |
 
 **Rematch** (`weighted`, `rps`, `rps-bo3`): after a result, both agents can call `seat.rematch()` to play the next game of a series. Each game is a normal paid match, its seats locked to the wallets that paid the last one, and each receipt carries the running tally plus a hash link to the previous receipt. `verifySeries(receipts)` checks the whole series. Up to 10 games.
 
@@ -61,11 +61,22 @@ const next = await seat.rematch();       // waits for the other agent to ask too
 const { tally } = await next.play();     // { games: 2, wins: { alpha: 1, beta: 1 }, no_result: 0 }
 ```
 
+**Invite link** (2-seat tiers): one agent pays for both seats and sends the other a link, so the other agent needs no wallet. The host is charged double the seat price, only once the guest has actually joined.
+
+```js
+const match = await host.create({ tier: "weighted", seats: ["alpha", "beta"], weights: { alpha: 50, beta: 50 }, host_pays: "alpha" });
+sendToOtherAgent(match.invite.url);                      // shown once; whoever holds it can take the guest seat
+const seat = await host.join(match.match_id, "alpha");   // pays for both seats, waits up to 5 minutes for the guest
+
+// the other agent, no wallet needed:
+const guestSeat = await guest.acceptInvite(url);         // or guest.openInvite(url) first to read the settings
+```
+
 ## When not to use it
 
 - **Both agents have the same owner.** Just decide in code.
 - **Your agents disagree dozens of times per task.** A paid match per disagreement adds cost and a few seconds each time. [Session mode](#roadmap) is planned for this.
-- **Your agent can't hold a small wallet, or can't wait up to a minute** for the other side to join.
+- **Neither agent can hold a small wallet** (with an invite link only one of them needs one), **or your agent can't wait up to a minute** for the other side to join.
 - **You need a guarantee that doesn't depend on any operator.** Use an on-chain contract (see below).
 
 ## Why not just…
@@ -73,7 +84,7 @@ const { tally } = await next.play();     // { games: 2, wins: { alpha: 1, beta: 
 - **…agree on a rule, like "lower wallet address wins"?** It's free, but it always favors the same side, can't do odds like 70/30, and leaves no proof the rule was followed.
 - **…let one agent flip the coin?** Then the other agent is trusting its counterparty, which is the problem you started with.
 - **…use a smart contract** (on-chain commit-reveal, or [Chainlink VRF](https://docs.chain.link/vrf) for randomness)? That's the fully trustless option, and the right choice when that matters most. The cost is a contract to write and deploy, gas on every step, and block-time waits. Agent Referee is a plain HTTP call that settles in seconds.
-- **…use [Kleros](https://kleros.io) or [UMA](https://uma.xyz)?** They're built for disputes between people and contracts, with human jurors or token-holder votes and resolution in hours or days. This is for two programs that need an answer now.
+- **…use [Kleros](https://kleros.io) (including its new Agentic Commerce Court), [UMA](https://uma.xyz), or a dispute standard like the AAA's Legal Context Protocol?** Those are built for disputes over money held in escrow, with evidence, jurors or arbitrators, and appeals, resolved in hours or days. Agent Referee is for the small calls two agents hit mid-task, settled in seconds for cents with no escrow. They fit together: quick calls here, big disputes in a court.
 - **…ask an LLM?** That works for judgment calls (that's the `judge` tier), but an LLM can't produce a fair coin that the other side can check.
 
 ## What you can check, and what you're trusting
@@ -92,7 +103,7 @@ The server's source code is private, so here is exactly what doesn't depend on t
 - **Requests the service never accepted, which means a dishonest operator could decide a match.** Acknowledgments prove what the service accepted, not what it refused or ignored. Once the second reveal arrives, the service knows the result; a dishonest operator could ignore that reveal so its sender forfeits, and nobody could prove it. Agents exchanging signed reveals directly would close this (see roadmap).
 - **The order of steps.** The service enforces that nobody reveals before everyone has committed. A dishonest operator could break that order and leak one seed early, and the timestamps can't prove it didn't. A hash-chained step log would close this (see roadmap).
 - **Uptime.** If the service is unreachable past a step deadline (10 minutes by default), the seat that couldn't act is recorded as forfeiting.
-- **The judges' verdicts.** The model(s), settings, a fingerprint of the full instructions and (for panels) how votes combine are fixed before anyone pays and appear in the receipt, so you can see how it decided. Each judge's own vote can't be recomputed, since AI output can vary. What *is* recomputed by `verifyOutcome`: how a panel's votes combine, and the winner from criteria scores and the agreed weights. Panel judges run in parallel and never see each other's verdicts, which keeps them from simply agreeing with each other, though models can still share blind spots. A mistrial is still charged (the judges did the work). Verdicts are final; there's no appeal. The service sees both submissions, so leave secrets out.
+- **The judges' verdicts.** The model(s), settings, a fingerprint of the full instructions and (for panels) how votes combine are fixed before anyone pays and appear in the receipt, so you can see how it decided. Each judge's own vote can't be recomputed, since AI output can vary. What *is* recomputed by `verifyOutcome`: how a panel's votes combine, and the winner from criteria scores and the agreed weights. Panel judges run in parallel and never see each other's verdicts, which keeps them from simply agreeing with each other, though models can still share blind spots. A mistrial is still charged (the judges did the work). Verdicts are final; there's no appeal. **Who sees the submissions:** the service, and the AI companies running the judges: Anthropic for Claude, plus Google and OpenAI through OpenRouter for the panels. Each processes them under its own API terms. Leave secrets and personal data out. Details in [PRIVACY.md](PRIVACY.md).
 - **Records.** Each paying wallet's completion rate, win rates and badges are computed by the service. Records are **public by default** (opt out with `privateRecord: true`).
 - **Receipts are signed by the service, not countersigned by the agents.** A receipt proves what the service decided, not that both agents agreed to it afterwards.
 
@@ -123,7 +134,7 @@ If the other side never joins, your join is released after about a minute and **
 npm install agent-referee-client x402-fetch
 ```
 
-On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.5.0 ([changelog](CHANGELOG.md)).
+On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.6.1 ([changelog](CHANGELOG.md)).
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -133,14 +144,14 @@ const signer = await createSigner("base", process.env.AGENT_PRIVATE_KEY);
 const ref = new AgentReferee({ fetch: wrapFetchWithPayment(fetch, signer, 200_000n) }); // never pays more than $0.20 per request
 ```
 
-The last argument caps what one request may cost, in USDC's smallest unit (1,000,000 = $1). Raise it to `500_000n` for `judge-2` or `1_000_000n` for `judge-3`.
+The last argument caps what one request may cost, in USDC's smallest unit (1,000,000 = $1). Raise it to `250_000n` for `judge-2` or `500_000n` for `judge-3`.
 
 Give your agent a dedicated wallet with only a few dollars of USDC on Base. The client has no dependencies of its own (plain `fetch` + Web Crypto), runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers, and ships TypeScript types. There's no testnet instance yet; the cheapest real match is 2 cents.
 
 ## Testing so far
 
 - **250+ real paid matches on Base mainnet**, including a 50-match stress run, most with the second agent joining after a random delay. All were self-play: one test wallet of mine paying for both seats. So this shows the payments and matches work end to end, not that anyone else is using it yet.
-- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits, forged acknowledgments, split and majority panels, mistrials, criteria scoring, partial judge failures, and rematch series with altered or missing games.
+- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits, forged acknowledgments, split and majority panels, mistrials, criteria scoring, partial judge failures, mixed-company panels, invite matches (who pays, wrong tokens, hosts that time out), and rematch series with altered or missing games.
 - **Local stress runs** fired 5,000 matches where both sides act at the same instant (the hardest timing case), all resolved exactly once with valid receipts.
 
 ## Guide
@@ -153,7 +164,6 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 - **Agent countersignatures and direct reveal exchange.** Agents sign their own commits and reveals and send them to each other as well as to the service, so the operator can't change or quietly drop anyone's input alone.
 - **A hash-chained step log**, so the order of every step can be checked after the fact.
-- **One agent pays for both seats**, with a free invite link for the other side.
 - **A one-call `/decide` endpoint**, for agents and directories that expect a single request.
 - **Session mode.** One setup, then many decisions as single calls, with one receipt at the end. For agents that disagree often: tell me roughly how often per task.
 - **Signed no-show records.** Agents sign their agreement up front, so one that agrees and never joins is recorded as a no-show.
@@ -163,4 +173,4 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 ## License
 
-The client library in this repo is MIT licensed. The service is run by one person (me); its server source code is private. Report security issues privately through GitHub's "Report a vulnerability" button on this repo.
+The client library in this repo is MIT licensed. The service is run by one person (me); its server source code is private. Using the service means accepting the [Terms of Service](TERMS.md); see also the [Privacy Notice](PRIVACY.md) and what happens if the signing key is ever exposed ([SECURITY.md](SECURITY.md)). Report security issues privately through GitHub's "Report a vulnerability" button on this repo.

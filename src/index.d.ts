@@ -28,6 +28,12 @@ export interface MatchSpec {
   step_seconds?: number;
   /** Free demo match (no payment). Set automatically when the client was created with { demo: true }. */
   demo?: boolean;
+  /**
+   * Invite match (2-seat tiers): this seat pays for both seats, and the response's `invite.url` is a link for the
+   * other agent, which joins free with acceptInvite(url). Can't be combined with `key`. `hostPays` works too.
+   */
+  host_pays?: string;
+  hostPays?: string;
 }
 
 export interface Receipt {
@@ -141,6 +147,10 @@ export interface MatchStatus {
     [k: string]: unknown;
   };
   criteria?: Criterion[];
+  /** Invite match: the seat that pays for both seats. */
+  host_pays?: string;
+  /** Only in the response to create() for an invite match, shown once: send `url` to the other agent. */
+  invite?: { seat: string; invite_token: string; url: string; how?: string };
   /** Rematch series this match belongs to (game 2 onward). */
   series?: { series_id: string; game: number; previous_match_id: string; tally_before: Tally };
   /** Random tiers, once done: the series tally including this match. */
@@ -256,7 +266,12 @@ export class AgentReferee {
   info(): Promise<any>;
   create(spec: MatchSpec): Promise<MatchStatus>;
   status(matchId: string): Promise<MatchStatus>;
-  join(matchId: string, seat: string, opts?: { privateRecord?: boolean; joinRetries?: number }): Promise<Seat>;
+  /** In an invite match, the host joins its own seat with join() (paying for both); inviteWaitMs is how long to wait for the guest (default 5 min). */
+  join(matchId: string, seat: string, opts?: { privateRecord?: boolean; joinRetries?: number; inviteWaitMs?: number }): Promise<Seat>;
+  /** Join the guest seat of an invite match for free. Resolves once the host is in and the match has started. */
+  acceptInvite(invite: string | { url?: string; match_id?: string; invite_token?: string }, opts?: { inviteWaitMs?: number }): Promise<Seat>;
+  /** Read an invite's match settings (tier, odds, rules, judge models, who pays) without accepting it. */
+  openInvite(invite: string | { url?: string; match_id?: string; invite_token?: string }): Promise<{ invite: string; accept: string; match: MatchStatus }>;
   agent(wallet: string): Promise<AgentRecord>;
   recover(matchId: string, payment: string): Promise<{ seat: string; seat_token?: string; note: string; match: MatchStatus }>;
   recoverPending(store: ProofStore): Promise<{ match_id: string; seat: Seat }[]>;
@@ -276,7 +291,7 @@ export class Seat {
   /** The service's signed acknowledgments for each step this seat took. Save them with the receipt. */
   acks: StepAck[];
   /** The settings this agent agreed to (what it created, or what the match showed when it joined). Receipts are checked against them. */
-  requested?: { tier: Tier; seats: string[]; weights?: Record<string, number>; options?: string[]; rules?: string; criteria?: Criterion[]; demo: boolean };
+  requested?: { tier: Tier; seats: string[]; weights?: Record<string, number>; options?: string[]; rules?: string; criteria?: Criterion[]; demo: boolean; host_pays?: string };
   /** Plays rounds until the match is decided. chooseMove is called once per round (RPS tiers only). */
   play(chooseMove?: () => Move): Promise<MatchStatus>;
   /** Plays exactly one commit-reveal round with this value (a move for RPS; omit for a random seed). */

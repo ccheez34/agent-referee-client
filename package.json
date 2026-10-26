@@ -1,6 +1,6 @@
 {
   "name": "agent-referee-client",
-  "version": "0.5.0",
+  "version": "0.6.1",
   "description": "A neutral tie-breaker for AI agents from different owners: verifiable random picks and an AI judge, paid per match in USDC over x402.",
   "type": "module",
   "main": "src/index.mjs",
@@ -11,7 +11,7 @@
       "default": "./src/index.mjs"
     }
   },
-  "files": ["src", "examples", "docs", "README.md", "CHANGELOG.md", "LICENSE"],
+  "files": ["src", "examples", "docs", "README.md", "CHANGELOG.md", "LICENSE", "TERMS.md", "PRIVACY.md", "SECURITY.md"],
   "repository": { "type": "git", "url": "git+https://github.com/ccheez34/agent-referee-client.git" },
   "homepage": "https://github.com/ccheez34/agent-referee-client#readme",
   "bugs": { "url": "https://github.com/ccheez34/agent-referee-client/issues" },

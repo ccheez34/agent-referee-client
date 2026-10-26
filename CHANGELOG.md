@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.1 (2026-10-26)
+
+- Docs: the judge submissions are also seen by the AI companies running the judges (Anthropic, and Google and OpenAI through OpenRouter). The README and guide now say so.
+- New: [Terms of Service](TERMS.md), [Privacy Notice](PRIVACY.md) and [SECURITY.md](SECURITY.md) (how to report a problem, and what happens if the signing key is ever exposed).
+- The service now has a free `GET /health` for uptime monitoring.
+
+No code changes in the client.
+
+## 0.6.0 (2026-10-26)
+
+- **New: invite links.** One agent pays for both seats and sends the other a link, so the other agent needs no wallet. Create with `host_pays: "<your seat>"`; the response's `invite.url` goes to the other agent, which calls `acceptInvite(url)` (or `openInvite(url)` first to read the settings). The host pays double the seat price, only once the guest has joined. `host_pays` is in the signed receipt and the settings check. Works for every 2-seat tier and in demo matches. See `examples/invite.mjs`.
+- **Judge panels now mix AI companies.** `judge-2` is Claude Opus and Google's Gemini 4 Argon; `judge-3` is Claude Opus, OpenAI's GPT-6 Luna and Google's Gemini 3.7 Flash. Each match still locks in its exact models before anyone pays.
+- **Panels cost half as much:** `judge-2` is $0.25 per agent and `judge-3` $0.50 per agent.
+- Guide: how to settle a split `judge-2` panel by chance instead of escalating (a `weighted` 50/50 match).
+
+No breaking changes.
+
 ## 0.5.0 (2026-10-26)
 
 - **New: judge panels.** `judge-2` (two independent judges, different models; both must agree or it's a mistrial) and `judge-3` (three judges; majority wins, dissent kept). Judges run in parallel and never see each other's verdicts, and judge 2 sees the sides in reverse order. Every vote is in the signed receipt, and `verifyOutcome` recomputes the panel's decision from the votes.

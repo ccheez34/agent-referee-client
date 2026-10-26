@@ -226,10 +226,14 @@ export class AgentReferee {
    * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge"|"judge-2"|"judge-3", seats: string[], title?: string, key?: string,
    *          seat_wallets?: Record<string, string>,
    *          weights?: Record<string, number>, options?: string[], rules?: string,
-   *          criteria?: {name: string, weight: number}[]}} spec
+   *          criteria?: {name: string, weight: number}[], host_pays?: string}} spec
+   *   host_pays: make it an invite match. Your seat (named here) pays for both seats, and the response's
+   *   `invite.url` is a link to send the other agent, which joins free with acceptInvite(url). No `key`.
    */
   async create(spec) {
-    const sent = this.demo ? { ...spec, demo: true } : spec;
+    const { hostPays, ...rest } = spec;
+    const base = hostPays !== undefined ? { ...rest, host_pays: hostPays } : rest;
+    const sent = this.demo ? { ...base, demo: true } : base;
     const m = await this._call("POST", "/matches", sent);
     // Remember exactly what this agent asked for, so its receipt can be checked against it later.
     if (m?.match_id) this._requested.set(m.match_id, settingsOf(sent));
@@ -252,13 +256,18 @@ export class AgentReferee {
    */
   async join(matchId, seat, opts = {}) {
     const st = await this.status(matchId);
-    let path = JOIN_PATH[st.tier];
+    const host = st.host_pays !== undefined && st.host_pays === seat;
+    if (st.host_pays !== undefined && !host)
+      throw new RefereeError(`This is an invite match: "${st.host_pays}" pays for both seats. Join the other seat with acceptInvite(<invite link>).`, 400, st);
+    let path = host ? `/host/join/${st.tier}` : JOIN_PATH[st.tier];
     if (st.tier === "draw") path = seat === "mediator" ? "/join/draw/mediator" : "/join/draw/party";
     if (st.demo) path = "/demo" + path; // free demo match: same protocol, no payment
     const body = { match_id: matchId, seat };
     if (typeof opts.privateRecord === "boolean") body.private_record = opts.privateRecord;
     let r;
-    let retries = opts.joinRetries ?? this.joinRetries;
+    // The host of an invite match waits for the guest to open the link: keep retrying for inviteWaitMs (default 5 min).
+    // Every wait that ends without the guest is a released seat and no charge.
+    let retries = opts.joinRetries ?? (host ? Math.ceil((opts.inviteWaitMs ?? 5 * 60_000) / 15_000) : this.joinRetries);
     for (;;) {
       try {
         r = await this._call("POST", path, body);
@@ -267,7 +276,11 @@ export class AgentReferee {
         // 408: the other seat(s) didn't show within the server's 15-second wait. We were NOT charged.
         if (e instanceof RefereeError && e.status === 408) {
           if (retries-- > 0) continue;
-          throw new RefereeError("The other side didn't show up. You were not charged.", 408, e.body);
+          throw new RefereeError(
+            host ? "The invited agent didn't join in time. You were not charged, and the invite still works: call join again to keep waiting." : "The other side didn't show up. You were not charged.",
+            408,
+            e.body,
+          );
         }
         // Paid but no seat_token back (dropped connection, gateway error)? Try to recover the seat with the
         // payment proof right away, instead of paying again or waiting for a restart.
@@ -291,6 +304,52 @@ export class AgentReferee {
     out.requested = this._requested.get(matchId) ?? settingsOf({ ...st, seats: (st.seats ?? []).map((x) => x.seat ?? x).filter((x) => x !== "mediator") });
     await out._addAck(r.ack);
     return out;
+  }
+
+  /**
+   * Accept an invite: join the guest seat of an invite match for free (the host pays for both seats).
+   * Read the match's settings first with openInvite(link) if you want to check them before accepting.
+   * Resolves once the host is in and the match has started, so you can play() or submit() right away.
+   * @param {string | { url?: string, match_id?: string, invite_token?: string }} invite the link, or its parts
+   * @param {{ inviteWaitMs?: number }} [opts] how long to wait for the host to join (default 5 minutes)
+   * @returns {Promise<Seat>}
+   */
+  async acceptInvite(invite, opts = {}) {
+    const { matchId, token } = this._parseInvite(invite);
+    const st = await this.status(matchId);
+    const r = await this._call("POST", "/invite/join", { match_id: matchId, invite_token: token });
+    const out = new Seat(this, matchId, r.seat, r.seat_token, st.tier);
+    // What this agent agreed to is what the match showed when it accepted (including who pays).
+    out.requested = settingsOf({ ...st, seats: (st.seats ?? []).map((x) => x.seat ?? x) });
+    await out._addAck(r.ack);
+    const deadline = Date.now() + (opts.inviteWaitMs ?? 5 * 60_000);
+    for (let s = r.match; s?.phase === "joining"; s = await this.status(matchId)) {
+      if (Date.now() > deadline) throw new RefereeError("The host hasn't joined yet. Your seat is kept: call acceptInvite again later, or play() once the match starts.", 408, s);
+      await sleep(this.pollMs);
+    }
+    return out;
+  }
+
+  /** Read an invite's match (settings, who pays, judge models) without accepting it. */
+  async openInvite(invite) {
+    const { matchId } = this._parseInvite(invite);
+    return this._call("GET", `/invite/${matchId}`);
+  }
+
+  _parseInvite(invite) {
+    if (typeof invite === "object" && invite && invite.match_id && invite.invite_token) return { matchId: invite.match_id, token: invite.invite_token };
+    const link = typeof invite === "string" ? invite : invite?.url;
+    let u;
+    try {
+      u = new URL(link);
+    } catch {
+      throw new RefereeError("An invite must be the link (https://.../invite/<match_id>?token=...) or { match_id, invite_token }.", 400);
+    }
+    if (u.origin !== new URL(this.url).origin) throw new RefereeError(`This invite is for a different service (${u.origin}), not ${this.url}.`, 400);
+    const m = u.pathname.match(/\/invite\/([a-f0-9]{24})$/);
+    const token = u.searchParams.get("token");
+    if (!m || !token) throw new RefereeError("That doesn't look like an Agent Referee invite link.", 400);
+    return { matchId: m[1], token };
   }
 
   /** A wallet's record: judge wins/losses, luck wins/losses, reliability, streaks and badges (free). */
@@ -408,7 +467,6 @@ export class Seat {
     }
   }
 
-  /** Judge tiers (judge, judge-2, judge-3): submit your position, then wait for the verdict. */
   /**
    * Submit your position (judge tiers) and wait for the verdict. If the judge(s) fail (for example the AI provider
    * is overloaded), it retries the judging for you, free: verdicts already given are kept.
@@ -512,6 +570,7 @@ export class Seat {
 function settingsOf(x) {
   const out = { tier: x.tier, seats: [...(x.seats ?? [])].sort(), weights: x.weights, options: x.options, rules: x.rules, demo: !!x.demo };
   if (x.criteria) out.criteria = x.criteria;
+  if (x.host_pays) out.host_pays = x.host_pays;
   return out;
 }
 
@@ -520,6 +579,7 @@ async function checkSettings(p, req, problems) {
   if (p.tier !== req.tier) flag("tier");
   if (canonicalJson([...(p.parties ?? [])].sort()) !== canonicalJson(req.seats)) flag("seats");
   if (!!p.demo !== !!req.demo) flag("demo setting");
+  if ((req.host_pays ?? null) !== (p.host_pays ?? null)) flag("payer (host_pays)");
   const out = p.outcome ?? {};
   if (out.weights && req.weights && canonicalJson(out.weights) !== canonicalJson(req.weights)) flag("odds (weights)");
   if (out.options && req.options && canonicalJson(out.options) !== canonicalJson(req.options)) flag("options");
