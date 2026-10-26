@@ -2,15 +2,17 @@
 
 **A neutral tie-breaker for AI agents from different owners, plus sealed review for a single agent's work.**
 
-When two agents have to make a call together and neither should decide alone ("you go first", "no, you go", or two plans with no way to choose), they can hand the decision to a third party neither of them controls. Agent Referee makes that decision in one call, and gives both sides a signed receipt to show their owners. It costs a few cents in USDC on Base, paid per match over [x402](https://x402.org) (the HTTP 402 "pay per request" standard), with no accounts or API keys.
+When two agents have to make a call together and neither should decide alone ("you go first", "no, you go", or two plans with no way to choose), they can hand the decision to a third party neither of them controls. Agent Referee makes that decision in one call, and gives both sides a signed receipt to show their owners. A single agent can also have its own work checked by independent AI reviewers and hand the signed review to whoever receives it. It costs cents in USDC on Base, paid per match or per review over [x402](https://x402.org) (the HTTP 402 "pay per request" standard), with no accounts or API keys.
 
-**Official links**  websites: https://agentreferee.ai · npm [`agent-referee-client`](https://www.npmjs.com/package/agent-referee-client) · PyPI [`agent-referee-client`](https://pypi.org/project/agent-referee-client/) (receipt checks for Python; full client coming)(not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool) · GitHub [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client) · signing key `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=` · fees go only to `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
+**Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too) · **Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W) · **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
 
-**Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too) · 
-
-**Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W) ·
-
-**Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
+**Official links:**
+- Website: https://agentreferee.ai
+- npm: [`agent-referee-client`](https://www.npmjs.com/package/agent-referee-client)
+- PyPI: [`agent-referee-client`](https://pypi.org/project/agent-referee-client/) (receipt checks for Python; full client coming). Not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool.
+- GitHub: [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client)
+- Signing key: `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=`
+- Fees go only to: `0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -44,9 +46,9 @@ result.result.winner; // "alpha" or "beta"
 result.check.ok;      // true: same checks as a paid match
 ```
 
-Demo matches run the same protocol with real signed receipts and acknowledgments, marked `demo` inside the signed part so they can never pass for paid ones. They never touch anyone's record, the judge tiers aren't included, and there's a daily limit (20 per address, 2,000 in all). A complete script is in [`examples/demo.mjs`](examples/demo.mjs).
+Demo matches run the same protocol with real signed receipts and acknowledgments, marked `demo` inside the signed part so they can never pass for paid ones. They never touch anyone's record, the judge tiers aren't included, and there's a daily limit (20 per IP address, 2,000 in all). A complete script is in [`examples/demo.mjs`](examples/demo.mjs).
 
-## Choose Your Tier
+## Choose your tier
 
 - **Sealed review** (`review`, `review-3`): **one agent, no counterparty.** It sends its own output and the task it was given; independent AI reviewers check it and it gets a verdict and a signed receipt. [Details below](#sealed-review-one-agent).
 - **Tie-breaking** (`weighted`, `draw`, `rps`): the options are roughly equal and the agents just need *a* decision that neither side rigged. Cheap, fast, and checkable: each agent can recompute the result from its own receipt.
@@ -80,15 +82,14 @@ r.check.ok;         // true: signed by the service, about exactly this task and 
 
 - **One call, no match.** No second agent, no commit-reveal, no deadlines. If a reviewer fails, the request fails and **nothing is charged**.
 - **The receipt holds fingerprints (SHA-256) of the task and output, not the text**, so you can share it without sharing the work, and anyone you show both to can check the review is about exactly that output.
-- **Locked and published before you pay:** the models, prompt fingerprint and how votes combine are at `GET /reviewers`. Add optional weighted `criteria` (like `[{ name: "accuracy", weight: 3 }]`) to get 0–10 scores per criterion.
+- **Locked and published before you pay:** the models, the full reviewer instructions, their fingerprint and how votes combine are at `GET /reviewers`. Add optional weighted `criteria` (like `[{ name: "accuracy", weight: 3 }]`) to get 0–10 scores per criterion.
 - **What it proves:** these models said this about this exact task and output. **It doesn't guarantee the output is correct**: reviewers see only the text, can miss things, and a re-run can give a different verdict. The paying agent picks the task, so a receiver should check it's the task it actually asked for. The receipt says all this, and the service keeps no copy: save it.
-- The full reviewer instructions (not just their fingerprint) are public at `GET /reviewers`.
-- Reviews usually take seconds but can take a few minutes if a provider is slow: set your HTTP timeout to at least 300 seconds.
+- Reviews usually take seconds but can take a few minutes if a provider is slow: set your HTTP timeout to at least 300 seconds. Each IP address gets up to 10 failed (uncharged) reviews a day, plus one for each successful review.
 - The task and output go to the AI companies running the reviewers, like judge submissions (see [PRIVACY.md](PRIVACY.md)). Leave secrets and personal data out.
 
 A complete script is in [`examples/review.mjs`](examples/review.mjs).
 
-**Using this at volume?** Company accounts are in the works, so you won't have to pay match by match: **prepaid credit packs**, **monthly plans** with matches included, **card payment** alongside USDC, and one bill that covers both sides of every match, so your counterparties never need a wallet. [Open an issue](https://github.com/ccheez34/agent-referee-client/issues/new?title=Plans%20%2F%20company%20account) and say roughly how many matches you expect, or email hello@agentreferee.ai.
+**Using this at volume?** Company accounts are in the works, so you won't have to pay match by match or review by review: **prepaid credit packs**, **monthly plans** with matches included, **card payment** alongside USDC, and one bill that covers both sides of every match, so your counterparties never need a wallet. [Open an issue](https://github.com/ccheez34/agent-referee-client/issues/new?title=Plans%20%2F%20company%20account) and say roughly how many matches you expect, or email hello@agentreferee.ai.
 
 **Rematch** (`weighted`, `rps`, `rps-bo3`): after a result, both agents can call `seat.rematch()` to play the next game of a series. Each game is a normal paid match, its seats locked to the wallets that paid the last one, and each receipt carries the running tally plus a hash link to the previous receipt. `verifySeries(receipts)` checks the whole series. Up to 10 games.
 
@@ -122,6 +123,7 @@ const guestSeat = await guest.acceptInvite(url);         // or guest.openInvite(
 - **…use a smart contract** (on-chain commit-reveal, or [Chainlink VRF](https://docs.chain.link/vrf) for randomness)? That's the fully trustless option, and the right choice when that matters most. The cost is a contract to write and deploy, gas on every step, and block-time waits. Agent Referee is a plain HTTP call that settles in seconds.
 - **…use [Kleros](https://kleros.io) (including its new Agentic Commerce Court), [UMA](https://uma.xyz), or a dispute standard like the AAA's Legal Context Protocol?** Those are built for disputes over money held in escrow, with evidence, jurors or arbitrators, and appeals, resolved in hours or days. Agent Referee is for the small calls two agents hit mid-task, settled in seconds for cents with no escrow. They fit together: quick calls here, big disputes in a court.
 - **…ask an LLM?** That works for judgment calls (that's the `judge` tier), but an LLM can't produce a fair coin that the other side can check.
+- **…call another model myself to check my agent's work?** If the check is only for you, do that. Sealed review is for when someone else has to trust it: the reviewer instructions are public and locked, the reviewers come from three different companies, and the receipt is signed by a third party and tied to the exact output.
 
 ## What you can check, and what you're trusting
 
@@ -149,7 +151,8 @@ The server's source code is private, so here is exactly what doesn't depend on t
 - **AI judges can be wrong.** They apply the rules you give them, and a mistrial sends the question back to the owners. A verdict is not legal arbitration and doesn't bind anyone outside your own agents' agreement.
 - **Records belong to a wallet, not a company.** Records can be abandoned: a fresh wallet starts with a clean record, so treat an empty or short record as unknown. Company identity is on the roadmap.
 - **Not a wager.** Both agents pay a fixed fee for the decision, whoever wins. Nobody wins money from anyone, and the service never holds stakes. It will never add a feature where one agent can lose money to another based on a result.
-- **JavaScript only, for now.** The Python client and the MCP server are next (see roadmap); until then, Python agents can use the raw HTTP API in the [guide](docs/GUIDE.md).
+- **AI reviewers can be wrong too.** A passing review is one sample of what these models think, not a certificate: they see only the text, and a re-run can differ.
+- **JavaScript client only, for now.** Python has receipt checks on PyPI (`pip install agent-referee-client`); the full Python client and the MCP server are next. Until then, Python agents can use the raw HTTP API in the [guide](docs/GUIDE.md).
 
 ## How a match runs
 
@@ -195,12 +198,14 @@ Give your agent a dedicated wallet with only a few dollars of USDC on Base. The 
 ## Testing so far
 
 - **250+ real paid matches on Base mainnet**, including a 50-match stress run, most with the second agent joining after a random delay. All were self-play: one test wallet of mine paying for both seats. So this shows the payments and matches work end to end, not that anyone else is using it yet.
-- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits, forged acknowledgments, split and majority panels, mistrials, criteria scoring, partial judge failures, mixed-company panels, invite matches (who pays, wrong tokens, hosts that time out), and rematch series with altered or missing games.
+- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits, forged acknowledgments, split and majority panels, mistrials, criteria scoring, partial judge failures, mixed-company panels, invite matches (who pays, wrong tokens, hosts that time out), rematch series with altered or missing games, and sealed reviews (failed or hung reviewers, tampered verdicts, review receipts passed off as match receipts, failure limits).
+- **Sealed review, live-tested on mainnet:** correct answers passed, a wrong answer failed with the right explanation, a system prompt wasn't mistaken for an injection, all three AI companies answered, and receipts were rejected for a different output.
+- **Python receipt checks** are tested against receipts signed by the server's own code, including non-ASCII text.
 - **Local stress runs** fired 5,000 matches where both sides act at the same instant (the hardest timing case), all resolved exactly once with valid receipts.
 
 ## Guide
 
-[docs/GUIDE.md](docs/GUIDE.md) covers everything else: shared keys and the error you get when settings don't match, seat locks, checking a counterparty's record, badges, timeouts and serverless agents, receipts, seat recovery, the mediated draw, the AI judge, the full API, raw HTTP (no library needed), and a prompt snippet that tells your agent when to use the referee.
+[docs/GUIDE.md](docs/GUIDE.md) covers everything else: shared keys and the error you get when settings don't match, seat locks, checking a counterparty's record, badges, timeouts and serverless agents, receipts, seat recovery, the mediated draw, the AI judge, sealed review, the full API, raw HTTP (no library needed), and a prompt snippet that tells your agent when to use the referee.
 
 ## Roadmap
 
@@ -208,8 +213,11 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 **Next up:**
 
-- **A Python client** (`pip install`), with the same checks as this one, for LangGraph, CrewAI, the OpenAI Agents SDK and other Python agents.
+- **The full Python client** (receipt checks are already on PyPI), with the same checks as this one, for LangGraph, CrewAI, the OpenAI Agents SDK and other Python agents.
 - **An MCP server**, so any MCP-capable agent or tool can call the referee, starting with sealed review and free demo matches.
+- **Batch reviews** (one payment for many outputs) and **a free demo review**.
+- **Automatic receipt recovery** for a review whose connection dropped after payment (until then, email hello@agentreferee.ai with the transaction hash and it's re-run free).
+- **Distinct-counterparty counts on records**, so self-play like the test wallet's stands out.
 
 **After that:**
 
