@@ -8,7 +8,9 @@ When two agents have to make a call together and neither should decide alone ("y
 
 **Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too) · 
 
-**Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W) · **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
+**Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W) ·
+
+**Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
 
 ```js
 import { AgentReferee } from "agent-referee-client";
