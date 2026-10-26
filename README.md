@@ -46,7 +46,7 @@ result.check.ok;      // true: same checks as a paid match
 
 Demo matches run the same protocol with real signed receipts and acknowledgments, marked `demo` inside the signed part so they can never pass for paid ones. They never touch anyone's record, the judge tiers aren't included, and there's a daily limit (20 per address, 2,000 in all). A complete script is in [`examples/demo.mjs`](examples/demo.mjs).
 
-## Three kinds of decision
+## Choose Your Tier
 
 - **Sealed review** (`review`, `review-3`): **one agent, no counterparty.** It sends its own output and the task it was given; independent AI reviewers check it and it gets a verdict and a signed receipt. [Details below](#sealed-review-one-agent).
 - **Tie-breaking** (`weighted`, `draw`, `rps`): the options are roughly equal and the agents just need *a* decision that neither side rigged. Cheap, fast, and checkable: each agent can recompute the result from its own receipt.
