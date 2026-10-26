@@ -2,6 +2,8 @@
 // Works in Node 18+, Deno, Bun, browsers and Cloudflare Workers (uses fetch + Web Crypto only).
 
 export const DEFAULT_URL = "https://agent-referee.fairplayclub.workers.dev";
+/** Every address the official service answers on. An invite from any of them works with any of them. */
+export const OFFICIAL_URLS = [DEFAULT_URL, "https://agentreferee.ai"];
 
 const JOIN_PATH = {
   rps: "/join/rps",
@@ -13,6 +15,8 @@ const JOIN_PATH = {
 };
 
 const JUDGE_TIERS = ["judge", "judge-2", "judge-3"];
+const REVIEW_TIERS = ["review", "review-3"];
+const REVIEW_VERDICTS = ["pass", "needs_changes", "fail", "cannot_assess"];
 
 export class RefereeError extends Error {
   constructor(message, status, body) {
@@ -345,7 +349,10 @@ export class AgentReferee {
     } catch {
       throw new RefereeError("An invite must be the link (https://.../invite/<match_id>?token=...) or { match_id, invite_token }.", 400);
     }
-    if (u.origin !== new URL(this.url).origin) throw new RefereeError(`This invite is for a different service (${u.origin}), not ${this.url}.`, 400);
+    const mine = new URL(this.url).origin;
+    const official = OFFICIAL_URLS.map((x) => new URL(x).origin);
+    const same = u.origin === mine || (official.includes(u.origin) && official.includes(mine));
+    if (!same) throw new RefereeError(`This invite is for a different service (${u.origin}), not ${this.url}.`, 400);
     const m = u.pathname.match(/\/invite\/([a-f0-9]{24})$/);
     const token = u.searchParams.get("token");
     if (!m || !token) throw new RefereeError("That doesn't look like an Agent Referee invite link.", 400);
@@ -371,6 +378,43 @@ export class AgentReferee {
       if (Date.now() > deadline) throw new RefereeError("Timed out waiting for the other side.", 0, st);
       await sleep(this.pollMs);
     }
+  }
+
+  /**
+   * Sealed review: one agent sends its own output to independent AI reviewers and gets a signed review back.
+   * No second agent and no match. `tier` is "review" (one reviewer) or "review-3" (three reviewers from three
+   * AI companies, majority verdict). Paid per review over x402 through the fetch you gave the client; if a
+   * reviewer fails, the request fails and nothing is charged.
+   *
+   * Returns { review_id, tier, result: { verdict, tally, unanimous }, votes, receipt, check }. `check` is
+   * verifyReview's answer: the signature, that the receipt is about exactly this task and output, and that the
+   * verdict recomputes from the votes. Save the receipt with the output; the service keeps no copy.
+   */
+  async review({ tier = "review", task, output, title, criteria } = {}) {
+    if (this.demo) throw new RefereeError("Sealed review has no demo mode: every review is a real AI call.", 400, {});
+    if (!REVIEW_TIERS.includes(tier)) throw new RefereeError(`tier must be one of: ${REVIEW_TIERS.join(", ")}`, 400, {});
+    const r = await this._call("POST", `/${tier}`, { task, output, title, criteria });
+    const check = await this.verifyReview(r.receipt, { task, output, tier });
+    return { ...r, check };
+  }
+
+  /**
+   * Check a sealed-review receipt: the service's signature (pinned keys, or GET /pubkey), plus everything
+   * verifyReviewOutcome checks offline. Pass the task and output you hold so it confirms the review is about them.
+   * Returns { ok, problems, trusts }.
+   */
+  async verifyReview(receipt, opts = {}) {
+    let trusted = opts.publicKeys ?? this.publicKeys;
+    if (!trusted) {
+      const info = await this._call("GET", "/pubkey");
+      trusted = [info.public_key, ...(info.history || []).map((h) => h.public_key)];
+    }
+    const res = await verifyReviewOutcome(receipt, opts);
+    if (!(await verifySignature(receipt, trusted))) {
+      res.problems.unshift("The receipt's signature doesn't check out against the service's key.");
+      res.ok = false;
+    }
+    return res;
   }
 
   /**
@@ -636,6 +680,43 @@ function checkJudgeDecision(p, problems, trusts) {
   else problems.push(`Unknown decision rule "${judge.decision_rule}".`);
   if ((out.winner ?? null) !== winner) problems.push(`By the ${judge.decision_rule} rule the panel's decision should be ${winner ?? "a mistrial"}.`);
   if (out.tally && canonicalJson(out.tally) !== canonicalJson(tally)) problems.push("The vote tally doesn't match the votes.");
+}
+
+/**
+ * Check a sealed-review receipt offline, without the network: that it's a review (never a match receipt), that
+ * it's about exactly the task and output you pass, that the votes come from the committed reviewers, and that the
+ * verdict and tally recompute from the votes by the published rule. Doesn't check the signature: use
+ * verifyReview (or verifySignature) for that. Returns { ok, problems, trusts }.
+ */
+export async function verifyReviewOutcome(receipt, opts = {}) {
+  const p = receipt?.payload ?? receipt;
+  const problems = [];
+  const trusts = ["Each reviewer's verdict is that AI model's judgment: auditable (model, prompt fingerprint), not recomputable, and not a guarantee the output is correct."];
+  if (p?.type !== "review") return { ok: false, problems: ["Not a sealed-review receipt."], trusts };
+  if (opts.tier && p.tier !== opts.tier) problems.push(`This review is ${p.tier}, not ${opts.tier}.`);
+  if (opts.output !== undefined && (await sha256Hex(opts.output)) !== p.output_sha256) problems.push("This review is about a different output than the one you have.");
+  if (opts.task !== undefined && (await sha256Hex(opts.task)) !== p.task_sha256) problems.push("This review is for a different task than the one you have.");
+  const models = p.reviewers?.models ?? [];
+  const votes = p.votes ?? [];
+  const size = { review: 1, "review-3": 3 }[p.tier];
+  if (!size || models.length !== size || votes.length !== size) problems.push(`Expected ${size ?? "?"} reviewer votes, the receipt has ${votes.length}.`);
+  votes.forEach((v, i) => {
+    if (v.model !== models[i]) problems.push(`Vote ${i + 1} doesn't come from the committed reviewer (${models[i]}).`);
+    if (!REVIEW_VERDICTS.includes(v.verdict)) problems.push(`Vote ${i + 1} has an unknown verdict.`);
+    if (p.criteria?.length && v.scores) {
+      const total = p.criteria.reduce((n, c) => n + c.weight * (v.scores[c.name] ?? 0), 0);
+      if (v.total !== total) problems.push(`Vote ${i + 1}'s weighted total doesn't match its scores.`);
+    }
+  });
+  const tally = Object.fromEntries(REVIEW_VERDICTS.map((v) => [v, 0]));
+  for (const v of votes) if (v.verdict in tally) tally[v.verdict]++;
+  let verdict;
+  if (p.reviewers?.decision_rule === "single") verdict = votes[0]?.verdict;
+  else if (p.reviewers?.decision_rule === "majority") verdict = REVIEW_VERDICTS.find((v) => tally[v] > votes.length / 2) ?? "split";
+  else problems.push(`Unknown decision rule "${p.reviewers?.decision_rule}".`);
+  if (verdict !== undefined && p.result?.verdict !== verdict) problems.push(`By the ${p.reviewers.decision_rule} rule the verdict should be ${verdict}.`);
+  if (canonicalJson(p.result?.tally ?? {}) !== canonicalJson(tally)) problems.push("The vote tally doesn't match the votes.");
+  return { ok: problems.length === 0, problems, trusts };
 }
 
 const RPS_BEATS = { rock: "scissors", paper: "rock", scissors: "paper" };

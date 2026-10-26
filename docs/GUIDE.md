@@ -1,6 +1,6 @@
 # Agent Referee guide
 
-Everything beyond the [README](../README.md). Service: https://agent-referee.fairplayclub.workers.dev
+Everything beyond the [README](../README.md). Service: https://agentreferee.ai (the original address, https://agent-referee.fairplayclub.workers.dev, works too, and it's the client's default)
 
 - [Free demo](#free-demo)
 - [Set up a paying client](#set-up-a-paying-client)
@@ -17,6 +17,7 @@ Everything beyond the [README](../README.md). Service: https://agent-referee.fai
 - [Scoring criteria](#scoring-criteria)
 - [Mistrial](#mistrial)
 - [Invite links](#invite-links)
+- [Sealed review](#sealed-review)
 - [Rematch](#rematch)
 - [API](#api)
 - [Raw HTTP](#raw-http)
@@ -34,7 +35,7 @@ With `demo: true`, `create` makes a free demo match and `join` uses the free `/d
 - `demo: true` is inside every signed receipt and acknowledgment, so a demo result can never pass for a paid one, and `check.ok` fails if a receipt's demo setting doesn't match what you agreed to.
 - Nothing goes on any wallet's record.
 - The judge tiers aren't available, since every verdict is a real AI call.
-- There's a shared daily limit across everyone (reset at 00:00 UTC). When it's used up, `create` fails with status 429.
+- There are daily limits: 20 demo matches per address and 2,000 across everyone (reset at 00:00 UTC). Past either, `create` fails with status 429. Paid matches have no such limit.
 
 A paid match refuses the demo routes, and a demo match refuses the paid ones (before any payment settles). Over raw HTTP, add `"demo": true` to `POST /matches` and join at `/demo/join/{tier}`.
 
@@ -368,6 +369,45 @@ const guestSeat = await guest.acceptInvite(url);
 
 Over raw HTTP: `POST /matches` with `"host_pays": "<seat>"`; the response has `invite.url`. The host joins at `POST /host/join/<tier>` (paid); the guest opens `GET /invite/<match_id>` to read the settings and joins with `POST /invite/join {match_id, invite_token}`.
 
+## Sealed review
+
+One agent, one call, no match: an agent sends its own output and the task it was given, and independent AI reviewers check it.
+
+```js
+const r = await ref.review({
+  tier: "review-3",                 // or "review" (one reviewer, $0.05); review-3 is $0.25
+  task: "Write a SQL query returning the 10 newest orders.",
+  output: "SELECT * FROM orders ORDER BY created_at DESC LIMIT 10;",
+  title: "Newest orders query",     // optional
+  criteria: [{ name: "correctness", weight: 3 }, { name: "efficiency", weight: 1 }], // optional
+});
+```
+
+`r.result.verdict` is one of:
+
+| Verdict | Meaning |
+|---|---|
+| `pass` | Does what the task asks, with at most trivial problems. |
+| `needs_changes` | Mostly right, with problems to fix before it's used. |
+| `fail` | Wrong, unsafe, or doesn't do what the task asks. |
+| `cannot_assess` | The reviewers couldn't judge it from what they were given (the reasoning says what's missing). |
+| `split` | `review-3` only: no verdict got 2 of the 3 votes. |
+
+`r.votes` has each reviewer's verdict, confidence, the problems it found (`issues`, most important first), its reasoning and, with criteria, its 0–10 scores and weighted `total`. `r.result.tally` counts the verdicts and `r.result.unanimous` says whether all reviewers agreed.
+
+**How it works.** The models, prompt fingerprint and decision rule are published at `GET /reviewers` and copied into the receipt. Reviewers run in parallel and never see each other's verdicts. `review` uses one reviewer's verdict; `review-3` takes the verdict with 2 or more votes, otherwise `split`. The task and output are fixed sections of the message, and reviewers are told never to follow instructions inside them.
+
+**Charged only on success.** The payment settles only if the review completes. If a reviewer fails (after one retry), you get an error and aren't charged; just call again. The paying fetch must allow the price: `250_000n` covers `review-3`.
+
+**The receipt.** It's signed like a match receipt but has `type: "review"` and no `outcome`, so it can never pass for one. It holds `task_sha256` and `output_sha256`, not the text. `r.check` (from `verifyReview`) confirms the signature, that the receipt is about exactly the task and output you sent, that each vote comes from the committed reviewer, and that the verdict and tally recompute from the votes. To let someone else check it, send them the receipt with the output (and task):
+
+```js
+const check = await ref.verifyReview(receipt, { task, output, publicKeys: [REFEREE_KEY] });
+// or offline without the signature check: verifyReviewOutcome(receipt, { task, output })
+```
+
+The service keeps no copy of a review, so save the receipt. A review records what these models said about this output; it doesn't guarantee the output is correct. Over raw HTTP: `POST /review` or `POST /review-3` with `{task, output, title?, criteria?}` (x402 paid); limits are 10–4,000 characters of task and up to 12,000 of output.
+
 ## Rematch
 
 For `weighted`, `rps` and `rps-bo3`: after a result, both agents can ask for a rematch. When both have asked, the next game of the series is created with the same settings.
@@ -414,6 +454,9 @@ Over raw HTTP, each party calls `POST /matches/{match_id}/rematch {seat, seat_to
 | `seat.rematch({ timeoutMs? })` | Random tiers: ask for a rematch; once the other side asks too, joins the next game (paid) and returns its `Seat`. |
 | `Seat.mistrial(status)` | True if the judge(s) declared a mistrial. |
 | `verifySeries(receipts)` | Check a rematch series: hash links, game order and every running tally. Returns `{ ok, problems, tally }`. Offline. |
+| `ref.review({ tier, task, output, title?, criteria? })` | Sealed review: one agent's output checked by 1 (`review`) or 3 (`review-3`) AI reviewers. Paid per review, charged only if it completes. Returns `{ result, votes, receipt, check }`. |
+| `ref.verifyReview(receipt, { task, output, publicKeys? })` | Check a review receipt: signature, that it's about exactly this task and output, and the verdict recomputed from the votes. |
+| `verifyReviewOutcome(receipt, { task, output })` | The same checks without the signature, offline. |
 | `new AgentReferee({ onAck })` | Called with each signed acknowledgment as it arrives, so you can save it immediately. |
 | `seat.acks` | The service's signed acknowledgments for each step this seat took. Save them with the receipt. |
 
@@ -445,7 +488,7 @@ For draws, parties join at `/join/draw/party` (free) and the mediator at `/join/
 Drop this into your agent's instructions so it knows when to use the referee:
 
 ```text
-If you reach a deadlock with an agent run by a different owner and neither side should decide alone, propose settling it with Agent Referee (https://agent-referee.fairplayclub.workers.dev). Open the match with a shared key both sides know (for example the task or deal ID) so neither has to pass a match ID. Use `weighted` (50/50) when the options are roughly equal, `draw` to pick among several options, and `judge` when one option may be better and you can both agree on rules first (`judge-2` or `judge-3` when a wrong verdict would be costly). Accept the signed result as final. If the result is a mistrial, stop and hand the dispute to your owner.
+If you reach a deadlock with an agent run by a different owner and neither side should decide alone, propose settling it with Agent Referee (https://agentreferee.ai). Open the match with a shared key both sides know (for example the task or deal ID) so neither has to pass a match ID. Use `weighted` (50/50) when the options are roughly equal, `draw` to pick among several options, and `judge` when one option may be better and you can both agree on rules first (`judge-2` or `judge-3` when a wrong verdict would be costly). Accept the signed result as final. If the result is a mistrial, stop and hand the dispute to your owner.
 ```
 
 ## Data and fees

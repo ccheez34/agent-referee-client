@@ -1,6 +1,8 @@
 // Type definitions for agent-referee-client.
 
 export const DEFAULT_URL: string;
+/** Every address the official service answers on (an invite from any of them works with any of them). */
+export const OFFICIAL_URLS: string[];
 
 export type Tier = "rps" | "rps-bo3" | "weighted" | "draw" | "judge" | "judge-2" | "judge-3";
 /** A weighted scoring criterion for the judge tiers. Weights are whole numbers 1-100. */
@@ -260,6 +262,30 @@ export interface AgentRefereeOptions {
   onAck?: (ack: StepAck, seat: Seat) => void | Promise<void>;
 }
 
+export type ReviewTier = "review" | "review-3";
+export type ReviewVerdict = "pass" | "needs_changes" | "fail" | "cannot_assess";
+export interface ReviewVote {
+  reviewer: number;
+  model: string;
+  verdict: ReviewVerdict;
+  confidence: "high" | "medium" | "low" | "not given";
+  issues: string[];
+  reasoning: string;
+  scores?: Record<string, number>;
+  total?: number;
+}
+export interface ReviewResult { verdict: ReviewVerdict | "split"; tally: Record<ReviewVerdict, number>; unanimous: boolean }
+export interface ReviewCheck { ok: boolean; problems: string[]; trusts: string[] }
+export interface ReviewResponse {
+  review_id: string;
+  tier: ReviewTier;
+  result: ReviewResult;
+  votes: ReviewVote[];
+  receipt: Receipt;
+  note?: string;
+  check: ReviewCheck;
+}
+
 export class AgentReferee {
   constructor(opts?: AgentRefereeOptions);
   url: string;
@@ -278,6 +304,9 @@ export class AgentReferee {
   waitFor(matchId: string, fn: (st: MatchStatus) => boolean): Promise<MatchStatus>;
   /** Checks the signature of a receipt or a step acknowledgment. Pass publicKeys to verify offline. */
   verifyReceipt(receipt: Receipt | StepAck, opts?: { publicKeys?: string[] }): Promise<boolean>;
+  /** Sealed review: one agent's output checked by 1 or 3 independent AI reviewers, with a signed receipt. */
+  review(opts: { tier?: ReviewTier; task: string; output: string; title?: string; criteria?: Criterion[] }): Promise<ReviewResponse>;
+  verifyReview(receipt: Receipt, opts?: { task?: string; output?: string; tier?: ReviewTier; publicKeys?: string[] }): Promise<ReviewCheck>;
 }
 
 export class Seat {
@@ -313,6 +342,7 @@ export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { se
 /** Check a rematch series from its receipts: hash links, game order and every running tally. Verify signatures separately. */
 export function verifySeries(receipts: (Receipt | Receipt["payload"])[]): Promise<{ ok: boolean; problems: string[]; tally: Tally | null }>;
 /** Standalone, offline signature check for a receipt or step acknowledgment. */
+export function verifyReviewOutcome(receipt: Receipt | Receipt["payload"], opts?: { task?: string; output?: string; tier?: ReviewTier }): Promise<ReviewCheck>;
 export function verifySignature(doc: Receipt | StepAck, publicKeys: string[]): Promise<boolean>;
 /** Every acknowledgment the receipt contradicts. No secrets needed, so anyone can run it. */
 export function findContradictions(receipt: Receipt | Receipt["payload"], acks: StepAck[]): Contradiction[];

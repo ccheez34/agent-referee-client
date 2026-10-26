@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0 (2026-10-27)
+
+- **New: sealed review.** One agent, no counterparty: `ref.review({ tier, task, output })` has independent AI reviewers check an agent's own output and returns a verdict (`pass`, `needs_changes`, `fail`, `cannot_assess`, or `split` for a divided `review-3`), the problems found, and a signed receipt. `review` is one reviewer ($0.05); `review-3` is three reviewers from three AI companies with a majority verdict ($0.25). Charged only if the review completes. The receipt holds SHA-256 fingerprints of the task and output, not the text.
+- New: `verifyReview(receipt, { task, output })` and the offline `verifyReviewOutcome`, which check the receipt is about exactly that task and output and recompute the verdict from the votes. See `examples/review.mjs`.
+- README: official links (website, npm, GitHub, signing key, fee wallet).
+
+No breaking changes.
+
+## 0.6.2 (2026-10-26)
+
+- The service now has its own domain, **https://agentreferee.ai**. The original address keeps working and stays the client's default, so nothing changes for existing code.
+- Invite links from either official address now work with a client set to the other one (0.6.1 accepted only the client's own address). The service writes invite links with the original address, so 0.6.1 clients keep working too.
+- Contact: hello@agentreferee.ai, in the README, terms and privacy notice.
+- Docs: a **Limitations** section (one operator, AI judges can be wrong, records belong to a wallet, not a wager) and what's next: a Python client, an MCP server and sealed review.
+- Free demos are now limited per address (20 a day) as well as in all (raised to 2,000 a day), so one script can't use them up for everyone. The service now also serves `/llms.txt`.
+
 ## 0.6.1 (2026-10-26)
 
 - Docs: the judge submissions are also seen by the AI companies running the judges (Anthropic, and Google and OpenAI through OpenRouter). The README and guide now say so.
