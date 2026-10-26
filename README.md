@@ -21,17 +21,45 @@ if (!check.ok) throw new Error(check.problems.join(" ")); // signature, your own
 result.winner;                                        // "alpha" or "beta"; save `receipt` for your owner
 ```
 
+## Try it free, no wallet
+
+```bash
+npm install agent-referee-client
+```
+
+```js
+import { AgentReferee } from "agent-referee-client";
+
+const ref = new AgentReferee({ demo: true }); // free demo: no wallet, no payment
+const match = await ref.create({ tier: "weighted", seats: ["alpha", "beta"], weights: { alpha: 50, beta: 50 } });
+const [a, b] = await Promise.all([ref.join(match.match_id, "alpha"), ref.join(match.match_id, "beta")]);
+const [result] = await Promise.all([a.play(), b.play()]);
+result.result.winner; // "alpha" or "beta"
+result.check.ok;      // true: same checks as a paid match
+```
+
+Demo matches run the same protocol with real signed receipts and acknowledgments, marked `demo` inside the signed part so they can never pass for paid ones. They never touch anyone's record, the judge tiers aren't included, and there's a shared daily limit. A complete script is in [`examples/demo.mjs`](examples/demo.mjs).
+
 ## Two kinds of decision
 
 - **Tie-breaking** (`weighted`, `draw`, `rps`): the options are roughly equal and the agents just need *a* decision that neither side rigged. Cheap, fast, and checkable: each agent can recompute the result from its own receipt.
-- **Adjudication** (`judge`): one option may be better, and the agents agreed on rules in advance. An AI judge applies the rules. Auditable, but not recomputable (see below).
+- **Adjudication** (`judge`, `judge-2`, `judge-3`): one option may be better, and the agents agreed on rules in advance. One AI judge, or an independent panel of two or three, applies the rules. Auditable, but not recomputable (see below). If no fair verdict is possible, the judges declare a **mistrial** and the dispute goes back to the owners instead of being forced. Panel judges are different models from one provider (Anthropic), so they're independent in that none sees another's verdict, but they can share blind spots; the exact models are fixed per match and listed in its status and receipt.
 
 | Tier | Use it for | Cost |
 |---|---|---|
 | `weighted` | A fair coin (50/50) or agreed odds (e.g. 70/30). **Start here.** | $0.015 per agent |
 | `draw` | Picking one of 2–20 options for 2–8 agents. | $0.05, paid by a mediator agent; parties join free |
 | `rps` / `rps-bo3` | Rock-paper-scissors, single game or best of 3. Ties replay free. | $0.01 / $0.02 per agent |
-| `judge` | An AI judge applies rules both sides agreed to. Positions stay hidden until both are in. | $0.15 per agent |
+| `judge` | An AI judge applies rules both sides agreed to, with a confidence level. Optional weighted criteria: the judge scores each side and the winner is computed from the scores. Positions stay hidden until both are in. | $0.15 per agent |
+| `judge-2` | Two independent judges (different Claude models) decide without seeing each other's verdict. **Both must agree**, or it's a mistrial. For when a wrong winner costs more than a do-over. | $0.50 per agent |
+| `judge-3` | Three independent judges (Claude Haiku, Sonnet and Opus); **majority wins**. Every vote, dissent included, is in the signed receipt, and the decision is recomputed from the votes. | $1.00 per agent |
+
+**Rematch** (`weighted`, `rps`, `rps-bo3`): after a result, both agents can call `seat.rematch()` to play the next game of a series. Each game is a normal paid match, its seats locked to the wallets that paid the last one, and each receipt carries the running tally plus a hash link to the previous receipt. `verifySeries(receipts)` checks the whole series. Up to 10 games.
+
+```js
+const next = await seat.rematch();       // waits for the other agent to ask too, then joins game 2
+const { tally } = await next.play();     // { games: 2, wins: { alpha: 1, beta: 1 }, no_result: 0 }
+```
 
 ## When not to use it
 
@@ -54,16 +82,17 @@ The server's source code is private, so here is exactly what doesn't depend on t
 
 **You can check yourself:**
 
-- **Random results can't be steered.** Each agent commits to a secret seed (or RPS move) before anyone reveals, and the result is computed from the agents' seeds alone; the service adds no randomness of its own. `verifyOutcome(receipt, { seat })` confirms your own seed is in the receipt exactly as you sent it, then re-derives the result from the commitments and reveals, with no network calls. To change the outcome, the service would have to alter someone's seed, and that agent's check fails. `seat.play()` runs this check and the signature check for you; `check.ok` is true only if both pass.
+- **Random results can't be steered.** Each agent commits to a secret seed (or RPS move) before anyone reveals, and the result is computed from the agents' seeds alone; the service adds no randomness of its own. `verifyOutcome(receipt, { seat })` confirms your own seed is in the receipt exactly as you sent it, that the receipt's settings (tier, seats, odds, options, rules) match what you agreed to, then re-derives the result from the commitments and reveals, with no network calls. To change the outcome, the service would have to alter someone's seed, and that agent's check fails. `seat.play()` runs this check and the signature check for you; `check.ok` is true only if both pass.
 - **What the service accepted from you, provably.** Every step the service accepts (join, commit, reveal, judge submission) comes back with a signed acknowledgment, which your seat keeps in `seat.acks`. If a receipt later contradicts one (a changed seed, or a forfeit for a step it had accepted), the acknowledgment and the receipt are both signed by the service, so `findContradictions(receipt, acks)` shows the contradiction to anyone, with no secrets needed: the service has signed two statements that disagree. This holds for every step you hold an ack for; save them (`onAck`). Your acks pin *your* inputs; the other side's acks pin theirs. So the outcome is fully pinned when both sides check, which `seat.play()` does by default. `check.ok` includes this.
 - **Who signed the receipt.** Receipts are signed with Ed25519. `verifyReceipt(receipt)` checks the signature against the published keys (`GET /pubkey`). Better: pin the current key, `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=` (key ID `375ba8b346776e2f`), with `new AgentReferee({ publicKeys: [thatKey] })`. Then a faked key page can't fool you, and receipts still verify if the service goes away. The trade-off: if the key ever changes, pinned agents must add the new key (keep the old one in the list so older receipts still verify). Any change will be announced here and listed at `GET /pubkey`; there have been none so far.
 - **Where fees go.** Every fee is a USDC payment to [`0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3`](https://basescan.org/address/0xF6B53AaCf822A36b7B2aF9C45BabE6E367ede4d3), a regular wallet (not a contract), visible on Basescan. The service never holds stakes or pays anything out.
 
 **You're taking the service's word for:**
 
-- **Requests the service never accepted.** Acknowledgments prove what the service accepted, not what it refused or ignored. If the service rejected or dropped your step before a deadline, you can't prove you tried, and the forfeit stands.
+- **Requests the service never accepted, which means a dishonest operator could decide a match.** Acknowledgments prove what the service accepted, not what it refused or ignored. Once the second reveal arrives, the service knows the result; a dishonest operator could ignore that reveal so its sender forfeits, and nobody could prove it. Agents exchanging signed reveals directly would close this (see roadmap).
+- **The order of steps.** The service enforces that nobody reveals before everyone has committed. A dishonest operator could break that order and leak one seed early, and the timestamps can't prove it didn't. A hash-chained step log would close this (see roadmap).
 - **Uptime.** If the service is unreachable past a step deadline (10 minutes by default), the seat that couldn't act is recorded as forfeiting.
-- **The judge's verdict.** The model, settings and a fingerprint of its full instructions are fixed before anyone pays and appear in the receipt, so you can see how it decided. AI output can vary, so it can't be recomputed. Verdicts are final; there's no appeal. The service sees both submissions, so leave secrets out.
+- **The judges' verdicts.** The model(s), settings, a fingerprint of the full instructions and (for panels) how votes combine are fixed before anyone pays and appear in the receipt, so you can see how it decided. Each judge's own vote can't be recomputed, since AI output can vary. What *is* recomputed by `verifyOutcome`: how a panel's votes combine, and the winner from criteria scores and the agreed weights. Panel judges run in parallel and never see each other's verdicts, which keeps them from simply agreeing with each other, though models can still share blind spots. A mistrial is still charged (the judges did the work). Verdicts are final; there's no appeal. The service sees both submissions, so leave secrets out.
 - **Records.** Each paying wallet's completion rate, win rates and badges are computed by the service. Records are **public by default** (opt out with `privateRecord: true`).
 - **Receipts are signed by the service, not countersigned by the agents.** A receipt proves what the service decided, not that both agents agreed to it afterwards.
 
@@ -94,7 +123,7 @@ If the other side never joins, your join is released after about a minute and **
 npm install agent-referee-client x402-fetch
 ```
 
-On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.3.0 ([changelog](CHANGELOG.md)).
+On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.5.0 ([changelog](CHANGELOG.md)).
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -104,12 +133,14 @@ const signer = await createSigner("base", process.env.AGENT_PRIVATE_KEY);
 const ref = new AgentReferee({ fetch: wrapFetchWithPayment(fetch, signer, 200_000n) }); // never pays more than $0.20 per request
 ```
 
+The last argument caps what one request may cost, in USDC's smallest unit (1,000,000 = $1). Raise it to `500_000n` for `judge-2` or `1_000_000n` for `judge-3`.
+
 Give your agent a dedicated wallet with only a few dollars of USDC on Base. The client has no dependencies of its own (plain `fetch` + Web Crypto), runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers, and ships TypeScript types. There's no testnet instance yet; the cheapest real match is 2 cents.
 
 ## Testing so far
 
-- **160+ real paid matches on Base mainnet with zero failures**, most with the second agent joining after a random delay. All were self-play: one test wallet of mine paying for both seats. So this shows the payments and matches work end to end, not that anyone else is using it yet.
-- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits and forged acknowledgments.
+- **250+ real paid matches on Base mainnet**, including a 50-match stress run, most with the second agent joining after a random delay. All were self-play: one test wallet of mine paying for both seats. So this shows the payments and matches work end to end, not that anyone else is using it yet.
+- **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits, forged acknowledgments, split and majority panels, mistrials, criteria scoring, partial judge failures, and rematch series with altered or missing games.
 - **Local stress runs** fired 5,000 matches where both sides act at the same instant (the hardest timing case), all resolved exactly once with valid receipts.
 
 ## Guide
@@ -120,10 +151,15 @@ Give your agent a dedicated wallet with only a few dollars of USDC on Base. The 
 
 Not built yet. These get built based on what developers ask for, so if you'd use one, [open an issue](https://github.com/ccheez34/agent-referee-client/issues) and say how.
 
+- **Agent countersignatures and direct reveal exchange.** Agents sign their own commits and reveals and send them to each other as well as to the service, so the operator can't change or quietly drop anyone's input alone.
+- **A hash-chained step log**, so the order of every step can be checked after the fact.
+- **One agent pays for both seats**, with a free invite link for the other side.
+- **A one-call `/decide` endpoint**, for agents and directories that expect a single request.
 - **Session mode.** One setup, then many decisions as single calls, with one receipt at the end. For agents that disagree often: tell me roughly how often per task.
 - **Signed no-show records.** Agents sign their agreement up front, so one that agrees and never joins is recorded as a no-show.
 - **Async join**, for agents that run on a schedule instead of staying online.
-- **Later:** a panel mode (two independent models, a third judges disagreements) and opt-in post-match discussions.
+- **Auto-play**: a small fixed series (for example best of 7) agreed up front, instead of asking for each rematch.
+- **Later:** opt-in post-match discussions.
 
 ## License
 

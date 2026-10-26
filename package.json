@@ -1,6 +1,6 @@
 {
   "name": "agent-referee-client",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "A neutral tie-breaker for AI agents from different owners: verifiable random picks and an AI judge, paid per match in USDC over x402.",
   "type": "module",
   "main": "src/index.mjs",
@@ -15,7 +15,7 @@
   "repository": { "type": "git", "url": "git+https://github.com/ccheez34/agent-referee-client.git" },
   "homepage": "https://github.com/ccheez34/agent-referee-client#readme",
   "bugs": { "url": "https://github.com/ccheez34/agent-referee-client/issues" },
-  "keywords": ["ai-agents", "x402", "multi-agent", "tie-breaker", "arbitration", "commit-reveal", "randomness", "usdc", "base"],
+  "keywords": ["ai-agents", "x402", "multi-agent", "tie-breaker", "ai-judge", "commit-reveal", "randomness", "usdc", "base"],
   "license": "MIT",
   "engines": { "node": ">=18" },
   "peerDependencies": { "x402-fetch": ">=1.2.0" },

@@ -2,7 +2,9 @@
 
 export const DEFAULT_URL: string;
 
-export type Tier = "rps" | "rps-bo3" | "weighted" | "draw" | "judge";
+export type Tier = "rps" | "rps-bo3" | "weighted" | "draw" | "judge" | "judge-2" | "judge-3";
+/** A weighted scoring criterion for the judge tiers. Weights are whole numbers 1-100. */
+export interface Criterion { name: string; weight: number }
 export type Move = "rock" | "paper" | "scissors";
 export type Phase = "joining" | "commit" | "reveal" | "submit" | "judging" | "done" | "expired" | "error";
 
@@ -13,8 +15,10 @@ export interface MatchSpec {
   weights?: Record<string, number>;
   /** draw: 2–20 options to pick from */
   options?: string[];
-  /** judge: the rules both sides agree to */
+  /** judge tiers: the rules both sides agree to */
   rules?: string;
+  /** judge tiers (optional): 1-8 weighted criteria. Each judge scores both sides 0-10 per criterion; the higher weighted total wins (a tie is a mistrial). */
+  criteria?: Criterion[];
   title?: string;
   /** Shared name: every agent that creates with the same key and settings gets the same match. */
   key?: string;
@@ -22,6 +26,8 @@ export interface MatchSpec {
   seat_wallets?: Record<string, string>;
   /** Deadline per step, 60–3600 seconds (default 600). */
   step_seconds?: number;
+  /** Free demo match (no payment). Set automatically when the client was created with { demo: true }. */
+  demo?: boolean;
 }
 
 export interface Receipt {
@@ -30,6 +36,8 @@ export interface Receipt {
     match_id: string;
     tier: Tier;
     title: string | null;
+    /** True for free demo matches. Signed, so a demo receipt can't pass for a paid one. */
+    demo?: boolean;
     parties: string[];
     decided_at: string;
     outcome: MatchResult;
@@ -38,10 +46,41 @@ export interface Receipt {
     paid_by: Record<string, string>;
     commitment_format?: string;
     standings?: unknown;
+    /** Rematch series (game 2 onward): the running tally after this game and a hash link to the previous receipt. */
+    series?: SeriesLink;
   };
   signature: string | null;
   algorithm: "Ed25519";
   public_key: string | null;
+}
+
+export interface Tally { games: number; wins: Record<string, number>; no_result: number }
+export interface SeriesLink {
+  series_id: string;
+  game: number;
+  previous_match_id: string;
+  /** sha256 of the canonical JSON of the previous receipt's payload */
+  previous_receipt_sha256: string;
+  tally: Tally;
+  max_games: number;
+}
+
+/** Why a mistrial happened, for programs. The first three (and "other") come from a judge; the rest from the panel rules. */
+export type MistrialCode = "different_questions" | "rules_not_applicable" | "missing_information" | "other" | "score_tie" | "panel_disagreement" | "panelist_mistrial" | "no_majority";
+
+/** One judge's verdict in a panel (judge-2 / judge-3). winner is null when that judge declared a mistrial. */
+export interface JudgeVote {
+  panelist: number;
+  model: string;
+  order: "sorted" | "reversed";
+  winner: string | null;
+  mistrial_reason?: string;
+  mistrial_code?: MistrialCode;
+  confidence: "high" | "medium" | "low" | "not given";
+  rule_applied: string;
+  reasoning: string;
+  scores?: Record<string, Record<string, number>>;
+  totals?: Record<string, number>;
 }
 
 export interface MatchResult {
@@ -57,6 +96,22 @@ export interface MatchResult {
   rule_applied?: string;
   judge_model?: string;
   no_result?: string;
+  /** Judge tiers: no fair verdict was possible; the dispute goes back to the owners. winner is null. */
+  mistrial?: boolean;
+  mistrial_reason?: string;
+  /** Machine-readable version of mistrial_reason. */
+  mistrial_code?: MistrialCode;
+  escalate_to_owners?: boolean;
+  /** Single judge: how sure the judge is. */
+  confidence?: "high" | "medium" | "low" | "not given";
+  /** Judge with criteria: 0-10 scores per party and criterion, and the weighted totals that decided it. */
+  scores?: Record<string, Record<string, number>>;
+  totals?: Record<string, number>;
+  criteria?: Criterion[];
+  /** Panels: every judge's vote (dissent included), how they combine, and the count. */
+  votes?: JudgeVote[];
+  decision_rule?: "unanimous" | "majority";
+  tally?: Record<string, number>;
   [k: string]: unknown;
 }
 
@@ -74,7 +129,24 @@ export interface MatchStatus {
   reveal_deadline?: string;
   step_seconds: number;
   expires_at: string;
-  judge?: { model: string; temperature: number; prompt_sha256: string; [k: string]: unknown };
+  judge?: {
+    model: string;
+    /** null: the model's own default (current models take no temperature setting). */
+    temperature: number | null;
+    prompt_sha256: string;
+    format_version: string;
+    /** judge-2 / judge-3: each panelist's model and the order it sees the parties in. */
+    panel?: { model: string; order: "sorted" | "reversed" }[];
+    decision_rule?: "unanimous" | "majority";
+    [k: string]: unknown;
+  };
+  criteria?: Criterion[];
+  /** Rematch series this match belongs to (game 2 onward). */
+  series?: { series_id: string; game: number; previous_match_id: string; tally_before: Tally };
+  /** Random tiers, once done: the series tally including this match. */
+  tally?: Tally;
+  /** Random tiers: whether a rematch can be asked for, who has asked, and the next game once both have. */
+  rematch?: { available: boolean; requested_by: string[]; next_match_id?: string };
   /** Set once phase is "done". */
   result?: MatchResult;
   /** Set once phase is "done". */
@@ -119,8 +191,9 @@ export interface StepAck {
     service: string;
     match_id: string;
     tier: Tier;
+    demo?: boolean;
     seat: string;
-    step: "join" | "commit" | "reveal" | "submit";
+    step: "join" | "commit" | "reveal" | "submit" | "rematch";
     accepted_at: string;
     round?: number;
     commitment?: string;
@@ -128,6 +201,8 @@ export interface StepAck {
     nonce?: string;
     position_sha256?: string;
     paid_by?: string | null;
+    game?: number;
+    next_match_id?: string | null;
   };
   signature: string | null;
   algorithm: "Ed25519";
@@ -169,6 +244,8 @@ export interface AgentRefereeOptions {
   joinRetries?: number;
   /** Pin the service's receipt-signing key(s) (base64) instead of fetching GET /pubkey. */
   publicKeys?: string[];
+  /** Create free demo matches: no wallet or payment needed. Receipts and acks are marked demo. */
+  demo?: boolean;
   /** Called with each signed step acknowledgment the moment it arrives. Persist it so your proof survives a crash. */
   onAck?: (ack: StepAck, seat: Seat) => void | Promise<void>;
 }
@@ -198,17 +275,28 @@ export class Seat {
   mine: { round?: number; value: string; nonce: string; commitment: string }[];
   /** The service's signed acknowledgments for each step this seat took. Save them with the receipt. */
   acks: StepAck[];
+  /** The settings this agent agreed to (what it created, or what the match showed when it joined). Receipts are checked against them. */
+  requested?: { tier: Tier; seats: string[]; weights?: Record<string, number>; options?: string[]; rules?: string; criteria?: Criterion[]; demo: boolean };
   /** Plays rounds until the match is decided. chooseMove is called once per round (RPS tiers only). */
   play(chooseMove?: () => Move): Promise<MatchStatus>;
   /** Plays exactly one commit-reveal round with this value (a move for RPS; omit for a random seed). */
   playRound(value?: string): Promise<MatchStatus>;
-  /** Judge tier: submit your position and wait for the verdict. */
-  submit(position: string): Promise<MatchStatus>;
+  /** Judge tiers: submit your position and wait for the verdict. */
+  /** Judge tiers: submit and wait for the verdict. Failed judging is retried for you (default 2 times, free). */
+  submit(position: string, opts?: { judgeRetries?: number; retryDelayMs?: number }): Promise<MatchStatus>;
+  /** Judge tiers: run failed judging again (phase "error"). Free; verdicts already given are kept. */
+  retryJudge(): Promise<MatchStatus>;
+  /** Random tiers: ask for a rematch; once the other party asks too, joins the next game (paid) and returns its Seat. */
+  rematch(opts?: { timeoutMs?: number; privateRecord?: boolean }): Promise<Seat>;
   static won(status: MatchStatus, seat: string): boolean;
+  /** True if the judge(s) declared a mistrial (no winner; take it back to the owners). */
+  static mistrial(status: MatchStatus): boolean;
 }
 
 /** Pass { seat } so the check also confirms the receipt holds exactly your own commitment and reveal. */
 export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { seat?: Seat; acks?: StepAck[] }): Promise<OutcomeCheck>;
+/** Check a rematch series from its receipts: hash links, game order and every running tally. Verify signatures separately. */
+export function verifySeries(receipts: (Receipt | Receipt["payload"])[]): Promise<{ ok: boolean; problems: string[]; tally: Tally | null }>;
 /** Standalone, offline signature check for a receipt or step acknowledgment. */
 export function verifySignature(doc: Receipt | StepAck, publicKeys: string[]): Promise<boolean>;
 /** Every acknowledgment the receipt contradicts. No secrets needed, so anyone can run it. */

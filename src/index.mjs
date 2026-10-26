@@ -8,7 +8,11 @@ const JOIN_PATH = {
   "rps-bo3": "/join/rps-bo3",
   weighted: "/join/weighted",
   judge: "/join/judge",
+  "judge-2": "/join/judge-2",
+  "judge-3": "/join/judge-3",
 };
+
+const JUDGE_TIERS = ["judge", "judge-2", "judge-3"];
 
 export class RefereeError extends Error {
   constructor(message, status, body) {
@@ -144,6 +148,7 @@ export class AgentReferee {
    * @param {object} [opts.capture] From captureFetch(), enables automatic seat recovery.
    * @param {(ack: object, seat: Seat) => void|Promise<void>} [opts.onAck] Called with each signed step acknowledgment
    *   the moment it arrives. Persist it so your proof survives a crash.
+   * @param {boolean} [opts.demo] Create free demo matches (no wallet, no payment). Receipts and acks are marked demo.
    * @param {string[]} [opts.publicKeys] Pin the service's receipt-signing key(s) (base64). Without it, keys are fetched from GET /pubkey.
    * @param {number} [opts.joinRetries] Extra 15-second waits for the other side before giving up (default 3, about 1 minute).
    */
@@ -158,6 +163,8 @@ export class AgentReferee {
     this._savedReceipts = new Set();
     this.publicKeys = opts.publicKeys; // pin the service's signing key(s) instead of fetching GET /pubkey
     this.onAck = opts.onAck; // called with each signed step acknowledgment as it arrives: persist it
+    this.demo = !!opts.demo; // free demo matches: no wallet needed, receipts marked demo
+    this._requested = new Map(); // match_id -> the settings this agent asked for
   }
 
   /**
@@ -216,12 +223,17 @@ export class AgentReferee {
    * Create a match (free). Share the returned match_id with the other agent(s), or pass a shared
    * `key` that every agent uses with the same settings so they all land in the same match.
    * Optional `seat_wallets` ({ alpha: "0x...", beta: "0x..." }) reserves each paid seat for one wallet.
-   * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge", seats: string[], title?: string, key?: string,
+   * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge"|"judge-2"|"judge-3", seats: string[], title?: string, key?: string,
    *          seat_wallets?: Record<string, string>,
-   *          weights?: Record<string, number>, options?: string[], rules?: string}} spec
+   *          weights?: Record<string, number>, options?: string[], rules?: string,
+   *          criteria?: {name: string, weight: number}[]}} spec
    */
-  create(spec) {
-    return this._call("POST", "/matches", spec);
+  async create(spec) {
+    const sent = this.demo ? { ...spec, demo: true } : spec;
+    const m = await this._call("POST", "/matches", sent);
+    // Remember exactly what this agent asked for, so its receipt can be checked against it later.
+    if (m?.match_id) this._requested.set(m.match_id, settingsOf(sent));
+    return m;
   }
 
   /** Current status of a match (anyone can read it). */
@@ -242,6 +254,7 @@ export class AgentReferee {
     const st = await this.status(matchId);
     let path = JOIN_PATH[st.tier];
     if (st.tier === "draw") path = seat === "mediator" ? "/join/draw/mediator" : "/join/draw/party";
+    if (st.demo) path = "/demo" + path; // free demo match: same protocol, no payment
     const body = { match_id: matchId, seat };
     if (typeof opts.privateRecord === "boolean") body.private_record = opts.privateRecord;
     let r;
@@ -265,12 +278,17 @@ export class AgentReferee {
           break;
         } catch (re) {
           // 404: that payment never claimed a seat, so it never settled. Safe to try joining again.
-          if (re instanceof RefereeError && re.status === 404 && retries-- > 0) continue;
+          if (re instanceof RefereeError && re.status === 404) {
+            if (retries-- > 0) continue;
+            throw e; // out of retries: report why the join failed, not the recovery lookup
+          }
           throw re;
         }
       }
     }
     const out = new Seat(this, matchId, seat, r.seat_token, st.tier);
+    // The settings this agent agreed to: what it created, or else what the match showed when it joined.
+    out.requested = this._requested.get(matchId) ?? settingsOf({ ...st, seats: (st.seats ?? []).map((x) => x.seat ?? x).filter((x) => x !== "mediator") });
     await out._addAck(r.ack);
     return out;
   }
@@ -390,14 +408,63 @@ export class Seat {
     }
   }
 
-  /** Judge tier: submit your position, then wait for the verdict. */
-  async submit(position) {
+  /** Judge tiers (judge, judge-2, judge-3): submit your position, then wait for the verdict. */
+  /**
+   * Submit your position (judge tiers) and wait for the verdict. If the judge(s) fail (for example the AI provider
+   * is overloaded), it retries the judging for you, free: verdicts already given are kept.
+   * @param {string} position
+   * @param {{ judgeRetries?: number, retryDelayMs?: number }} [opts] judgeRetries: how many times to retry failed judging (default 2).
+   */
+  async submit(position, opts = {}) {
     const r = await this.client._call("POST", `/matches/${this.matchId}/submit`, { seat: this.seat, seat_token: this.token, position });
     await this._addAck(r.ack);
-    const st = await this.client.waitFor(this.matchId, (st) => st.phase === "done");
-    if (st.receipt) st.check = await this._check(st.receipt);
+    let st = await this.client.waitFor(this.matchId, (st) => st.phase === "done");
+    for (let left = opts.judgeRetries ?? 2; st.phase === "error" && left > 0; left--) {
+      await sleep(opts.retryDelayMs ?? 5000);
+      st = await this.retryJudge();
+    }
+    return this._finishJudged(st);
+  }
+
+  /**
+   * Run the judging again after it failed (match phase "error"). Free, and verdicts already given are kept.
+   * Either party can call it; if the other side already did, this just waits for the result.
+   */
+  async retryJudge() {
+    try {
+      await this.client._call("POST", `/matches/${this.matchId}/retry-judge`, { seat: this.seat, seat_token: this.token });
+    } catch (e) {
+      if (!(e instanceof RefereeError && e.status === 409)) throw e; // 409: already retrying or done
+    }
+    return this._finishJudged(await this.client.waitFor(this.matchId, (st) => st.phase === "done"));
+  }
+
+  async _finishJudged(st) {
+    if (st.receipt && !st.check) st.check = await this._check(st.receipt);
     st.acks = [...this.acks]; // save these with the receipt: together they're your proof
     return st;
+  }
+
+  /**
+   * Ask for a rematch after a result (rps, rps-bo3, weighted). The other party must ask too; once both have,
+   * this joins the next game of the series (paid per seat, like any match) and returns its Seat.
+   * The next game's seats are locked to the wallets that paid this one, and each receipt carries the running
+   * tally plus the previous receipt's hash: check a whole series with verifySeries(receipts).
+   * @param {{ timeoutMs?: number, privateRecord?: boolean }} [opts] timeoutMs: how long to wait for the other side (default: the client's timeoutMs).
+   * @returns {Promise<Seat>}
+   */
+  async rematch(opts = {}) {
+    const r = await this.client._call("POST", `/matches/${this.matchId}/rematch`, { seat: this.seat, seat_token: this.token });
+    await this._addAck(r.ack);
+    let next = r.rematch?.next_match_id;
+    const deadline = Date.now() + (opts.timeoutMs ?? this.client.timeoutMs);
+    while (!next) {
+      if (Date.now() > deadline) throw new RefereeError("The other side didn't ask for a rematch in time. Nothing was charged.", 0, r);
+      await sleep(this.client.pollMs);
+      next = (await this.client.status(this.matchId)).rematch?.next_match_id;
+    }
+    if (this.requested) this.client._requested.set(next, this.requested);
+    return this.client.join(next, this.seat, opts);
   }
 
   async _addAck(ack) {
@@ -434,6 +501,81 @@ export class Seat {
   static won(status, seat) {
     return status?.result?.winner === seat;
   }
+
+  /** True if the judge(s) declared a mistrial: no fair verdict was possible, so the dispute goes back to the owners. */
+  static mistrial(status) {
+    return status?.result?.mistrial === true;
+  }
+}
+
+/** The settings that decide a match, in a comparable form. */
+function settingsOf(x) {
+  const out = { tier: x.tier, seats: [...(x.seats ?? [])].sort(), weights: x.weights, options: x.options, rules: x.rules, demo: !!x.demo };
+  if (x.criteria) out.criteria = x.criteria;
+  return out;
+}
+
+async function checkSettings(p, req, problems) {
+  const flag = (what) => problems.push(`The receipt's ${what} differs from what you agreed to.`);
+  if (p.tier !== req.tier) flag("tier");
+  if (canonicalJson([...(p.parties ?? [])].sort()) !== canonicalJson(req.seats)) flag("seats");
+  if (!!p.demo !== !!req.demo) flag("demo setting");
+  const out = p.outcome ?? {};
+  if (out.weights && req.weights && canonicalJson(out.weights) !== canonicalJson(req.weights)) flag("odds (weights)");
+  if (out.options && req.options && canonicalJson(out.options) !== canonicalJson(req.options)) flag("options");
+  const rh = p.proof?.rules_sha256;
+  if (rh && req.rules && rh !== (await sha256Hex(req.rules))) flag("rules");
+  // Scoring criteria are part of the deal too: present when agreed, absent when not.
+  if (JUDGE_TIERS.includes(p.tier) && !out.by_forfeit) {
+    const ch = p.proof?.criteria_sha256;
+    if (req.criteria?.length ? ch !== (await sha256Hex(canonicalJson(req.criteria))) : ch !== undefined) flag("scoring criteria");
+  }
+}
+
+/** Weighted totals from 0-10 scores; the pick is the higher total (equal totals: no pick). Mirrors the service. */
+function criteriaPick(scores, criteria) {
+  const totals = {};
+  for (const [party, s] of Object.entries(scores ?? {})) totals[party] = criteria.reduce((n, c) => n + c.weight * (s?.[c.name] ?? 0), 0);
+  const ranked = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  return { totals, pick: ranked.length >= 2 && ranked[0][1] !== ranked[1][1] ? ranked[0][0] : null };
+}
+
+/** Re-derive a judge decision from the signed votes and the published rule. The votes themselves are the judges' word. */
+function checkJudgeDecision(p, problems, trusts) {
+  const out = p.outcome ?? {};
+  const judge = p.proof?.judge ?? {};
+  const criteria = out.criteria;
+  if (out.mistrial) trusts.push(`Mistrial${out.mistrial_code ? ` (${out.mistrial_code})` : ""}: ${out.mistrial_reason ?? "no fair verdict was possible"}. The dispute goes back to the owners.`);
+  if (p.tier === "judge") {
+    trusts.push("The verdict is the AI judge's decision; it can be audited (rules, model, prompt fingerprint) but not recomputed.");
+    if (criteria?.length && out.scores) {
+      const { totals, pick } = criteriaPick(out.scores, criteria);
+      if (canonicalJson(totals) !== canonicalJson(out.totals ?? {})) problems.push("The criteria totals don't match the judge's scores and the agreed weights.");
+      if (!out.mistrial && (out.winner ?? null) !== pick) problems.push(`By the scores and agreed weights the winner should be ${pick ?? "nobody (a tie)"}.`);
+    }
+    return;
+  }
+  trusts.push("Each panelist's vote is that AI judge's decision (auditable, not recomputable). How the votes combine was recomputed from the receipt.");
+  const votes = out.votes ?? [];
+  const panel = judge.panel ?? [];
+  if (votes.length !== panel.length || !panel.length) {
+    problems.push(`Expected ${panel.length || "a panel of"} votes, the receipt has ${votes.length}.`);
+    return;
+  }
+  const picks = votes.map((v, i) => {
+    if (v.model !== panel[i].model || v.order !== panel[i].order) problems.push(`Vote ${i + 1} doesn't come from the committed panelist (${panel[i].model}).`);
+    if (v.winner === null) return null;
+    return criteria?.length && v.scores ? criteriaPick(v.scores, criteria).pick : v.winner;
+  });
+  const parties = [...(p.parties ?? [])].sort();
+  const tally = Object.fromEntries([...parties, "mistrial"].map((k) => [k, 0]));
+  for (const x of picks) tally[x ?? "mistrial"]++;
+  let winner = null;
+  if (judge.decision_rule === "unanimous") winner = picks[0] && picks.every((x) => x === picks[0]) ? picks[0] : null;
+  else if (judge.decision_rule === "majority") winner = parties.find((s) => tally[s] > picks.length / 2) ?? null;
+  else problems.push(`Unknown decision rule "${judge.decision_rule}".`);
+  if ((out.winner ?? null) !== winner) problems.push(`By the ${judge.decision_rule} rule the panel's decision should be ${winner ?? "a mistrial"}.`);
+  if (out.tally && canonicalJson(out.tally) !== canonicalJson(tally)) problems.push("The vote tally doesn't match the votes.");
 }
 
 const RPS_BEATS = { rock: "scissors", paper: "rock", scissors: "paper" };
@@ -471,6 +613,9 @@ export async function verifyOutcome(receipt, opts = {}) {
   if (!me) for (const e of evidence) problems.push(e.reason);
   const done = (recomputed) => ({ ok: problems.length === 0, recomputed, problems, trusts, evidence });
 
+  // The receipt must describe the match this agent agreed to (tier, seats, odds, options, rules, demo or not).
+  if (me?.requested) await checkSettings(p, me.requested, problems);
+
   // Your own inputs must appear in the receipt exactly as you sent them.
   if (me) {
     if (me.matchId !== p.match_id) problems.push("This receipt is for a different match than your seat.");
@@ -504,8 +649,8 @@ export async function verifyOutcome(receipt, opts = {}) {
   if (out.by_forfeit || out.forfeited?.length)
     trusts.push(`That ${(out.forfeited ?? []).join(", ")} missed a deadline is the service's record; it can't be recomputed from the receipt.`);
 
-  if (p.tier === "judge") {
-    trusts.push("The verdict is the AI judge's decision; it can be audited (rules, model, prompt fingerprint) but not recomputed.");
+  if (JUDGE_TIERS.includes(p.tier)) {
+    if (!out.by_forfeit) checkJudgeDecision(p, problems, trusts);
     return done(false);
   }
 
@@ -557,6 +702,50 @@ export async function verifyOutcome(receipt, opts = {}) {
 
   problems.push(`Unknown tier "${p.tier}".`);
   return done(false);
+}
+
+/**
+ * Check a rematch series from its receipts alone (any order; game 1 included or not). Confirms each game links to
+ * the previous receipt by hash, game numbers run in order, and every running tally adds up from the winners.
+ * Verify each receipt's signature too (verifyReceipt) and, for your own games, verifyOutcome.
+ * Returns { ok, problems, tally } where tally is the series total after the last game given.
+ */
+export async function verifySeries(receipts) {
+  const ps = (receipts ?? []).map((r) => r?.payload ?? r).filter(Boolean);
+  const problems = [];
+  if (!ps.length) return { ok: false, problems: ["No receipts given."], tally: null };
+  const gameOf = (p) => p.series?.game ?? 1;
+  ps.sort((a, b) => gameOf(a) - gameOf(b));
+  const seriesId = ps[0].series?.series_id ?? ps[0].match_id;
+  let tally = null;
+  for (let i = 0; i < ps.length; i++) {
+    const p = ps[i];
+    const s = p.series;
+    const game = gameOf(p);
+    if (game === 1) {
+      if (p.match_id !== seriesId) problems.push(`Game 1 (${p.match_id}) isn't the start of series ${seriesId}.`);
+    } else if (s?.series_id !== seriesId) problems.push(`Game ${game} belongs to a different series.`);
+    const prev = ps[i - 1];
+    if (prev) {
+      if (gameOf(prev) !== game - 1) problems.push(`Game ${game - 1} is missing.`);
+      else {
+        if (s?.previous_match_id !== prev.match_id) problems.push(`Game ${game} doesn't follow game ${game - 1}'s match.`);
+        if (s?.previous_receipt_sha256 !== (await sha256Hex(canonicalJson(prev)))) problems.push(`Game ${game} doesn't link to game ${game - 1}'s receipt (it was changed or swapped).`);
+      }
+    }
+    // Running tally: start from the given previous tally (or zero for game 1), add this game's result.
+    const before = game === 1 ? { games: 0, wins: Object.fromEntries((p.parties ?? []).map((x) => [x, 0])), no_result: 0 } : tally ?? (prev ? null : undefined);
+    if (before) {
+      const t = structuredClone(before);
+      t.games++;
+      const w = p.outcome?.winner;
+      if (w && (p.parties ?? []).includes(w)) t.wins[w] = (t.wins[w] ?? 0) + 1;
+      else t.no_result++;
+      if (s?.tally && canonicalJson(s.tally) !== canonicalJson(t)) problems.push(`Game ${game}'s tally doesn't add up.`);
+      tally = t;
+    } else tally = s?.tally ?? null; // series given from the middle: take its signed tally as the starting point
+  }
+  return { ok: problems.length === 0, problems, tally };
 }
 
 /**
