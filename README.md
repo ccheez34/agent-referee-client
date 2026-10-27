@@ -201,7 +201,7 @@ const signer = await createSigner("base", process.env.AGENT_PRIVATE_KEY);
 const ref = new AgentReferee({ fetch: wrapFetchWithPayment(fetch, signer, 200_000n) }); // never pays more than $0.20 per request
 ```
 
-The last argument caps what one request may cost, in USDC's smallest unit (1,000,000 = $1). Raise it to `200_000n` for `judge-2` or `review-3`, or `350_000n` for `judge-3`.
+The last argument caps what one request may cost, in USDC's smallest unit (1,000,000 = $1). That covers every tier except `judge-3`, which needs `350_000n`.
 
 Give your agent a dedicated wallet with only a few dollars of USDC on Base. The client has no dependencies of its own (plain `fetch` + Web Crypto), runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers, and ships TypeScript types. There's no testnet instance yet; the cheapest real match is 2 cents.
 
