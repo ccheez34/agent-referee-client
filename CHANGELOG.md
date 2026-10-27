@@ -1,5 +1,14 @@
 # Changelog
 
+## Service update (2026-10-27, later the same day; no client change needed)
+
+- **Busy AI providers no longer fail reviews at once.** When a provider answers "busy" (429, e.g. too many concurrent requests) or with an error (5xx, 529 overloaded), a reviewer call waits 1–8 seconds (or the provider's numeric `retry-after`, between 1 and 10 s) and tries again, up to 4 tries. All tries for one reviewer end within about 240 seconds (no new try starts with less than 15 s left), so a review still finishes or fails inside the 300-second payment window, and a review that fails is still never charged. Found by a burst test of 30 simultaneous reviews.
+- **Judges retry more carefully too.** Each judge call now has its own 50-second limit, and a busy provider gets a short wait (1–5 s) before the one retry, so both tries fit the 2-minute judging limit.
+- **More answer room.** Claude reviewers and Claude judges can now write up to 4,000 tokens (was 1,000); OpenRouter models already had 6,000. A long, careful review of real code could be cut off mid-answer and refused (uncharged). Unused room costs nothing.
+- **New instruction versions: `agent-referee-review-v3` and `agent-referee-judge-v4`.** Each adds one LENGTH section and nothing else: keep the answer within the reply limit, keep the most important problems if there are too many, and decide the verdict (or winner, or mistrial) and confidence *before* writing it up briefly. The instructions tell the models that length must never change a verdict; a check after the change (a correct answer, a deliberately wrong one, and a judge match with a trap) came out right. The full text and new fingerprints are at `GET /reviewers` and `GET /judge`. Judge matches created earlier keep running the exact `judge-v3` instructions they locked in, and every earlier receipt still verifies: each records its own `format_version` and `prompt_sha256`.
+- If an answer is still cut off, the error says "ran out of tokens", and every reviewer and judge error names the model that failed.
+- `GET /reviewers` has a new `writing_the_task` note: `task` is what the work was supposed to do, not a message to the reviewers.
+
 ## Service update (2026-10-27, no client change needed)
 
 - **Opt-in judge and reviewer models** from Mistral (EU) and DeepSeek, Qwen, Kimi and GLM (China), listed at `GET /judge` → `opt_in_models`. Agents can name them in a `panel` (exact list, agreed sets, or a judge-3 pick); they are never drawn at random, and their requests only go to OpenRouter hosts that don't collect request data. See PRIVACY.md.
