@@ -36,6 +36,8 @@ export interface MatchSpec {
    */
   host_pays?: string;
   hostPays?: string;
+  /** judge-2 / judge-3 (optional): which models judge. Both agents must agree on it, like the rules. */
+  panel?: PanelChoice;
 }
 
 export interface Receipt {
@@ -262,6 +264,13 @@ export interface AgentRefereeOptions {
   onAck?: (ack: StepAck, seat: Seat) => void | Promise<void>;
 }
 
+/**
+ * Which AI models judge or review. Leave it out for the default panel. "rotate": one model from each AI company,
+ * which model chosen at random from the published pool. An exact list of models, or a list of up to 5 model sets
+ * one of which is drawn at random. judge-3 only: { picks: { [seat]: model } }, each party names one judge and the
+ * third is drawn from a company neither picked. Every panel uses different AI companies.
+ */
+export type PanelChoice = "rotate" | string[] | string[][] | { picks: Record<string, string> };
 export type ReviewTier = "review" | "review-3";
 export type ReviewVerdict = "pass" | "needs_changes" | "fail" | "cannot_assess";
 export interface ReviewVote {
@@ -305,8 +314,8 @@ export class AgentReferee {
   /** Checks the signature of a receipt or a step acknowledgment. Pass publicKeys to verify offline. */
   verifyReceipt(receipt: Receipt | StepAck, opts?: { publicKeys?: string[] }): Promise<boolean>;
   /** Sealed review: one agent's output checked by 1 or 3 independent AI reviewers, with a signed receipt. */
-  review(opts: { tier?: ReviewTier; task: string; output: string; title?: string; criteria?: Criterion[] }): Promise<ReviewResponse>;
-  verifyReview(receipt: Receipt, opts?: { task?: string; output?: string; tier?: ReviewTier; publicKeys?: string[] }): Promise<ReviewCheck>;
+  review(opts: { tier?: ReviewTier; task: string; output: string; title?: string; criteria?: Criterion[]; panel?: PanelChoice }): Promise<ReviewResponse>;
+  verifyReview(receipt: Receipt, opts?: { task?: string; output?: string; tier?: ReviewTier; panel?: PanelChoice; publicKeys?: string[] }): Promise<ReviewCheck>;
 }
 
 export class Seat {
@@ -342,7 +351,7 @@ export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { se
 /** Check a rematch series from its receipts: hash links, game order and every running tally. Verify signatures separately. */
 export function verifySeries(receipts: (Receipt | Receipt["payload"])[]): Promise<{ ok: boolean; problems: string[]; tally: Tally | null }>;
 /** Standalone, offline signature check for a receipt or step acknowledgment. */
-export function verifyReviewOutcome(receipt: Receipt | Receipt["payload"], opts?: { task?: string; output?: string; tier?: ReviewTier }): Promise<ReviewCheck>;
+export function verifyReviewOutcome(receipt: Receipt | Receipt["payload"], opts?: { task?: string; output?: string; tier?: ReviewTier; panel?: PanelChoice }): Promise<ReviewCheck>;
 export function verifySignature(doc: Receipt | StepAck, publicKeys: string[]): Promise<boolean>;
 /** Every acknowledgment the receipt contradicts. No secrets needed, so anyone can run it. */
 export function findContradictions(receipt: Receipt | Receipt["payload"], acks: StepAck[]): Contradiction[];

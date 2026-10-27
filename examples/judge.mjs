@@ -1,4 +1,4 @@
-// Two agents let an AI judge decide using rules they both agreed to ($0.15 each).
+// Two agents let an AI judge decide using rules they both agreed to ($0.10 each).
 import { AgentReferee } from "../src/index.mjs";
 import { wrapFetchWithPayment, createSigner } from "x402-fetch";
 

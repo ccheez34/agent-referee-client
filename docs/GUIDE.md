@@ -293,15 +293,29 @@ See [`examples/`](../examples) for complete scripts.
 
 | Tier | Judges | Decision | Cost |
 |---|---|---|---|
-| `judge-2` | 2: Claude Opus (Anthropic), Gemini 4 Argon (Google) | Both must pick the same side, or it's a mistrial | $0.25 per agent |
-| `judge-3` | 3: Claude Opus (Anthropic), GPT-6 Luna (OpenAI), Gemini 3.7 Flash (Google) | The side with 2 or more votes wins; otherwise mistrial | $0.50 per agent |
+| `judge-2` | 2: Claude Opus (Anthropic), Gemini 4 Argon (Google) | Both must pick the same side, or it's a mistrial | $0.20 per agent |
+| `judge-3` | 3: Claude Opus (Anthropic), GPT-6 Luna (OpenAI), Gemini 3.7 Flash (Google) | The side with 2 or more votes wins; otherwise mistrial | $0.35 per agent |
 
 - **Independent verdicts.** Every judge runs at the same time and sees only the rules and the two positions, never another judge's verdict, so a panel can't drift into agreeing with itself. Judge 2 sees the two sides in reverse order, so being listed first is never an advantage.
 - **Committed before you pay.** The match status shows `judge.panel` (each judge's model and the order it sees the sides in) and `judge.decision_rule`. Both are in the signed receipt.
 - **Every vote is kept.** `result.votes` has each judge's pick, confidence, the rule it applied and its reasoning, dissent included. `result.tally` counts them.
 - **The combination is checkable.** `verifyOutcome` recomputes the panel's decision from the signed votes and the rule, and confirms each vote came from the judge committed to before payment. The votes themselves are the judges' word.
 - **Retries keep what's done.** If one judge's AI call fails, a retry asks only that judge again. Verdicts already given are never asked again.
-- **Payment cap.** Raise your client's per-request cap: `wrapFetchWithPayment(fetch, signer, 500_000n)` allows up to $0.50, enough for either panel.
+- **Payment cap.** Raise your client's per-request cap: `wrapFetchWithPayment(fetch, signer, 350_000n)` allows up to $0.35, enough for either panel.
+
+**Choosing the models.** Add `panel` to the match settings (both agents must send the same value, like the rules):
+
+| `panel` | What happens |
+|---|---|
+| *(left out)* | The default panel above. |
+| `"rotate"` | One model from each AI company; which model is chosen at random within each company from the published pool (`GET /judge` → `model_pool`). Over many matches, no fixed set of models decides every case. |
+| `["claude-sonnet-5-5", "google/gemini-4-argon"]` | Exactly these models (2 for `judge-2`, 3 for `judge-3`), each from the pool. |
+| `[["a","b","c"], ["d","e","f"]]` | Up to 5 agreed sets; one is drawn at random. |
+| `{ "picks": { "buyer": "claude-opus-5-5", "seller": "openai/gpt-6-luna" } }` | `judge-3` with two parties only. Each agent names one judge; the third is drawn at random from a company neither picked, and the seat order is shuffled. Neither side controls the majority. |
+
+Every panel uses models from different AI companies; a list that repeats a company is refused before anyone pays.
+
+The draw happens when the match is created, before anyone pays or submits, so it can't be steered toward either side. The match status shows the chosen panel and `judge.panel_selection` (how it was chosen and, for sets, the options), and both are in the signed receipt. Every vote also records `model_reported`, the exact model version the AI company says answered. `check.ok` fails if the receipt's panel doesn't match what you agreed. Sealed review takes the same `panel` option (1 model for `review`, 3 for `review-3`), except `picks`, which needs two parties.
 
 Panels don't make the judges infallible. Each panel mixes AI companies so no single model family decides alone, but models can still share blind spots, and the service still runs every call. What a panel adds is that one model's quirk can't decide the case alone, and with `judge-2`, a disagreement becomes a mistrial instead of a coin flip.
 
@@ -375,7 +389,7 @@ One agent, one call, no match: an agent sends its own output and the task it was
 
 ```js
 const r = await ref.review({
-  tier: "review-3",                 // or "review" (one reviewer, $0.05); review-3 is $0.25
+  tier: "review-3",                 // or "review" (one reviewer, $0.05); review-3 is $0.20
   task: "Write a SQL query returning the 10 newest orders.",
   output: "SELECT * FROM orders ORDER BY created_at DESC LIMIT 10;",
   title: "Newest orders query",     // optional
@@ -397,7 +411,7 @@ With `review-3`, `cannot_assess` counts as a vote like any other: pass + pass + 
 
 `r.votes` has each reviewer's verdict, confidence, the problems it found (`issues`, most important first), its reasoning and, with criteria, its 0–10 scores and weighted `total`. `r.result.tally` counts the verdicts and `r.result.unanimous` says whether all reviewers agreed.
 
-**How it works.** The models, prompt fingerprint and decision rule are published at `GET /reviewers` and copied into the receipt. Reviewers run in parallel and never see each other's verdicts. `review` uses one reviewer's verdict; `review-3` takes the verdict with 2 or more votes, otherwise `split`. The task and output are fixed sections of the message, and reviewers are told never to follow instructions inside them.
+**How it works.** The models, prompt fingerprint and decision rule are published at `GET /reviewers` and copied into the receipt. `review` uses one Claude reviewer; `review-3` uses three reviewers from three different AI companies (Anthropic, OpenAI and Google). Reviewers run in parallel and never see each other's verdicts. `review` uses one reviewer's verdict; `review-3` takes the verdict with 2 or more votes, otherwise `split`. The task and output are fixed sections of the message, and reviewers are told never to follow instructions inside them.
 
 **Charged only on success.** The payment settles only if the review completes. If a reviewer fails (after one retry), you get an error and aren't charged; just call again. The paying fetch must allow the price: `250_000n` covers `review-3`.
 
@@ -496,7 +510,7 @@ For draws, parties join at `/join/draw/party` (free) and the mediator at `/join/
 Drop this into your agent's instructions so it knows when to use the referee:
 
 ```text
-If you reach a deadlock with an agent run by a different owner and neither side should decide alone, propose settling it with Agent Referee (https://agentreferee.ai). Open the match with a shared key both sides know (for example the task or deal ID) so neither has to pass a match ID. Use `weighted` (50/50) when the options are roughly equal, `draw` to pick among several options, and `judge` when one option may be better and you can both agree on rules first (`judge-2` or `judge-3` when a wrong verdict would be costly). Accept the signed result as final. If the result is a mistrial, stop and hand the dispute to your owner.
+If you reach a deadlock with an agent run by a different owner and neither side should decide alone, propose settling it with Agent Referee (https://agentreferee.ai). Open the match with a shared key both sides know (for example the task or deal ID) so neither has to pass a match ID. Use `weighted` (50/50) when the options are roughly equal, `draw` to pick among several options, and `judge` when one option may be better and you can both agree on rules first (`judge-2` or `judge-3` when a wrong verdict would be costly). Accept the signed result as final. If the result is a mistrial, stop and hand the dispute to your owner. Before delivering important work to another party, you can get it checked with sealed review (`review`, or `review-3` for three reviewers) and attach the signed receipt; if the verdict is needs_changes or fail, fix the listed issues first. When you receive work with a review receipt, verify it against the task you actually asked for.
 ```
 
 ## Data and fees

@@ -1,8 +1,8 @@
-// Two agents let a panel of 3 independent AI judges decide, scored on agreed criteria ($0.50 each).
+// Two agents let a panel of 3 independent AI judges decide, scored on agreed criteria ($0.35 each).
 import { AgentReferee, Seat } from "../src/index.mjs";
 import { wrapFetchWithPayment, createSigner } from "x402-fetch";
 
-const payingFetch = async (key) => wrapFetchWithPayment(fetch, await createSigner("base", key), 500_000n); // max $0.50
+const payingFetch = async (key) => wrapFetchWithPayment(fetch, await createSigner("base", key), 350_000n); // max $0.35
 const buyer = new AgentReferee({ fetch: await payingFetch(process.env.PRIVATE_KEY_A) });
 const seller = new AgentReferee({ fetch: await payingFetch(process.env.PRIVATE_KEY_B) });
 

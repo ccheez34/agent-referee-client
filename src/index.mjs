@@ -390,11 +390,11 @@ export class AgentReferee {
    * verifyReview's answer: the signature, that the receipt is about exactly this task and output, and that the
    * verdict recomputes from the votes. Save the receipt with the output; the service keeps no copy.
    */
-  async review({ tier = "review", task, output, title, criteria } = {}) {
+  async review({ tier = "review", task, output, title, criteria, panel } = {}) {
     if (this.demo) throw new RefereeError("Sealed review has no demo mode: every review is a real AI call.", 400, {});
     if (!REVIEW_TIERS.includes(tier)) throw new RefereeError(`tier must be one of: ${REVIEW_TIERS.join(", ")}`, 400, {});
-    const r = await this._call("POST", `/${tier}`, { task, output, title, criteria });
-    const check = await this.verifyReview(r.receipt, { task, output, tier });
+    const r = await this._call("POST", `/${tier}`, { task, output, title, criteria, panel });
+    const check = await this.verifyReview(r.receipt, { task, output, tier, panel });
     return { ...r, check };
   }
 
@@ -615,7 +615,39 @@ function settingsOf(x) {
   const out = { tier: x.tier, seats: [...(x.seats ?? [])].sort(), weights: x.weights, options: x.options, rules: x.rules, demo: !!x.demo };
   if (x.criteria) out.criteria = x.criteria;
   if (x.host_pays) out.host_pays = x.host_pays;
+  if (x.panel) out.panel = x.panel;
   return out;
+}
+
+/**
+ * Did the panel the service used honour what was agreed? `panel` is the request ("rotate", a list of models,
+ * or a list of model sets); `committed` is the receipt's commitment ({ panel or models, panel_selection }).
+ * Returns a problem string, or null.
+ */
+const companyOfModel = (m) => (m.includes("/") ? m.split("/")[0] : m.startsWith("claude") ? "anthropic" : "other");
+
+function panelProblem(panel, models, selection) {
+  if (!panel) return null;
+  if (typeof panel === "object" && !Array.isArray(panel)) {
+    // judge-3 "picks": each party's pick must sit on the panel, and the third must be from the pool and a third company.
+    if (selection?.mode !== "picks" || canonicalJson(selection.picks ?? null) !== canonicalJson(panel.picks ?? null)) return "the agreed picks weren't used";
+    const picked = Object.values(panel.picks ?? {});
+    if (models.length !== picked.length + 1 || !picked.every((m) => models.includes(m))) return "a party's pick isn't on the panel";
+    const third = models.filter((m) => !picked.includes(m));
+    if (third.length !== 1 || !(selection.pool ?? []).includes(third[0])) return "the drawn judge isn't from the published pool";
+    if (new Set(models.map(companyOfModel)).size !== models.length) return "the panel repeats an AI company";
+    return null;
+  }
+  if (panel === "rotate") {
+    if (selection?.mode !== "rotate") return "the agreed rotating panel wasn't used";
+    if (!models.every((m) => (selection.pool ?? []).includes(m))) return "a rotating-panel model isn't from the published pool";
+    const companies = models.map(companyOfModel);
+    if (new Set(companies).size !== companies.length) return "the rotating panel repeats an AI company";
+    return null;
+  }
+  if (panel.every((x) => typeof x === "string")) return canonicalJson(models) === canonicalJson(panel) ? null : "the panel's models differ from the agreed models";
+  if (selection?.mode !== "random_set" || canonicalJson(selection.options) !== canonicalJson(panel)) return "the panel wasn't drawn from the agreed sets";
+  return panel.some((set) => canonicalJson(set) === canonicalJson(models)) ? null : "the panel isn't one of the agreed sets";
 }
 
 async function checkSettings(p, req, problems) {
@@ -630,6 +662,10 @@ async function checkSettings(p, req, problems) {
   const rh = p.proof?.rules_sha256;
   if (rh && req.rules && rh !== (await sha256Hex(req.rules))) flag("rules");
   // Scoring criteria are part of the deal too: present when agreed, absent when not.
+  if (req.panel && p.proof?.judge) {
+    const problem = panelProblem(req.panel, (p.proof.judge.panel ?? []).map((s) => s.model), p.proof.judge.panel_selection);
+    if (problem) problems.push(`The receipt's judges differ from what you agreed to: ${problem}.`);
+  }
   if (JUDGE_TIERS.includes(p.tier) && !out.by_forfeit) {
     const ch = p.proof?.criteria_sha256;
     if (req.criteria?.length ? ch !== (await sha256Hex(canonicalJson(req.criteria))) : ch !== undefined) flag("scoring criteria");
@@ -697,6 +733,8 @@ export async function verifyReviewOutcome(receipt, opts = {}) {
   if (opts.output !== undefined && (await sha256Hex(opts.output)) !== p.output_sha256) problems.push("This review is about a different output than the one you have.");
   if (opts.task !== undefined && (await sha256Hex(opts.task)) !== p.task_sha256) problems.push("This review is for a different task than the one you have.");
   const models = p.reviewers?.models ?? [];
+  const pp = panelProblem(opts.panel, models, p.reviewers?.panel_selection);
+  if (pp) problems.push(`The reviewers differ from what you asked for: ${pp}.`);
   const votes = p.votes ?? [];
   const size = { review: 1, "review-3": 3 }[p.tier];
   if (!size || models.length !== size || votes.length !== size) problems.push(`Expected ${size ?? "?"} reviewer votes, the receipt has ${votes.length}.`);

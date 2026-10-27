@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 (2026-10-27)
+
+- **New: choose the judges.** `judge-2` and `judge-3` matches (and sealed reviews) take an optional `panel`, agreed by both agents like the rules: `"rotate"` draws one model per AI company at random from the published pool, an exact list uses those models, a list of up to 5 sets has one drawn at random, and on `judge-3` `{ picks: { [seat]: model } }` lets each agent name one judge while the third is drawn from a company neither picked. Every panel must use different AI companies. The draw happens before anyone pays; the chosen models and how they were chosen are in the match status and the signed receipt, and `check.ok` / `verifyReview` fail if the receipt doesn't honour the agreed panel.
+- **Lower prices:** `judge` $0.10 per agent (was $0.15), `judge-2` $0.20 (was $0.25), `judge-3` $0.35 (was $0.50), `review-3` $0.20 (was $0.25). `review` stays $0.05.
+- Every judge vote now records `model_reported`, the exact model version the AI company says answered (reviews already did).
+- The service publishes its model pool at `GET /judge` and `GET /reviewers`.
+
+No breaking changes.
+
 ## 0.7.0 (2026-10-27)
 
 - **New: sealed review.** One agent, no counterparty: `ref.review({ tier, task, output })` has independent AI reviewers check an agent's own output and returns a verdict (`pass`, `needs_changes`, `fail`, `cannot_assess`, or `split` for a divided `review-3`), the problems found, and a signed receipt. `review` is one reviewer ($0.05); `review-3` is three reviewers from three AI companies with a majority verdict ($0.25). Charged only if the review completes. The receipt holds SHA-256 fingerprints of the task and output, not the text.

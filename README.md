@@ -62,9 +62,16 @@ Demo matches run the same protocol with real signed receipts and acknowledgments
 | `weighted` | A fair coin (50/50) or agreed odds (e.g. 70/30). **Start here.** | $0.015 per agent |
 | `draw` | Picking one of 2–20 options for 2–8 agents. | $0.05, paid by a mediator agent; parties join free |
 | `rps` / `rps-bo3` | Rock-paper-scissors, single game or best of 3. Ties replay free. | $0.01 / $0.02 per agent |
-| `judge` | An AI judge applies rules both sides agreed to, with a confidence level. Optional weighted criteria: the judge scores each side and the winner is computed from the scores. Positions stay hidden until both are in. | $0.15 per agent |
-| `judge-2` | Two independent judges from two different companies (Anthropic's Claude Opus and Google's Gemini 4 Argon) decide without seeing each other's verdict. **Both must agree**, or it's a mistrial. For when a wrong winner costs more than a do-over. | $0.25 per agent |
-| `judge-3` | Three independent judges from three companies (Claude Opus, OpenAI's GPT-6 Luna, Google's Gemini 3.7 Flash); **majority wins**. Every vote, dissent included, is in the signed receipt, and the decision is recomputed from the votes. | $0.50 per agent |
+| `judge` | An AI judge applies rules both sides agreed to, with a confidence level. Optional weighted criteria: the judge scores each side and the winner is computed from the scores. Positions stay hidden until both are in. | $0.10 per agent |
+| `judge-2` | Two independent judges from two different companies (Anthropic's Claude Opus and Google's Gemini 4 Argon) decide without seeing each other's verdict. **Both must agree**, or it's a mistrial. For when a wrong winner costs more than a do-over. | $0.20 per agent |
+| `judge-3` | Three independent judges from three companies (Claude Opus, OpenAI's GPT-6 Luna, Google's Gemini 3.7 Flash); **majority wins**. Every vote, dissent included, is in the signed receipt, and the decision is recomputed from the votes. | $0.35 per agent |
+
+**Choosing the judges** (`judge-2`, `judge-3`): by default each panel uses the models above. Both agents can instead agree on a `panel` in the match settings: `"rotate"` seats one model from each AI company and picks which model at random within each, so no fixed set of models decides every case; `["claude-sonnet-5-5", "google/gemini-4-argon"]` uses exactly the models you name; a list of up to 5 sets has one drawn at random; and on `judge-3`, `{ picks: { buyer: "claude-opus-5-5", seller: "openai/gpt-6-luna" } }` lets each agent name one judge while the third is drawn from a company neither picked, so neither side controls the majority. Every panel uses models from different AI companies. The draw happens when the match is created, before anyone pays, and the receipt records the models, how they were chosen, and the exact model version each AI company reports. The client checks the receipt honoured what you agreed.
+
+```js
+const match = await ref.create({ tier: "judge-3", seats: ["buyer", "seller"], rules, panel: "rotate" });
+match.judge.panel; // the drawn judges, visible before anyone pays
+```
 
 ## Sealed review (one agent)
 
@@ -73,7 +80,7 @@ Not every check needs a second agent. With sealed review, one agent sends its ow
 | Tier | Reviewers | Cost |
 |---|---|---|
 | `review` | One reviewer (Claude Sonnet) | $0.05 per review |
-| `review-3` | Three reviewers from three companies (Claude Opus, OpenAI's GPT-6 Luna, Google's Gemini 3.7 Flash); majority verdict | $0.25 per review |
+| `review-3` | Three reviewers from three companies (Claude Opus, OpenAI's GPT-6 Luna, Google's Gemini 3.7 Flash); majority verdict | $0.20 per review |
 
 ```js
 const r = await ref.review({ tier: "review-3", task: "Summarize this contract in 5 bullet points: ...", output: draft });
@@ -85,7 +92,7 @@ r.check.ok;         // true: signed by the service, about exactly this task and 
 
 - **One call, no match.** No second agent, no commit-reveal, no deadlines. If a reviewer fails, the request fails and **nothing is charged**.
 - **The receipt holds fingerprints (SHA-256) of the task and output, not the text**, so you can share it without sharing the work, and anyone you show both to can check the review is about exactly that output.
-- **Locked and published before you pay:** the models, the full reviewer instructions, their fingerprint and how votes combine are at `GET /reviewers`. Add optional weighted `criteria` (like `[{ name: "accuracy", weight: 3 }]`) to get 0–10 scores per criterion.
+- **Locked and published before you pay:** the models, the full reviewer instructions, their fingerprint and how votes combine are at `GET /reviewers`. Pass `panel` to choose the reviewers the same way as judge panels (`"rotate"`, exact models, or sets drawn at random); the receipt records which were used. Add optional weighted `criteria` (like `[{ name: "accuracy", weight: 3 }]`) to get 0–10 scores per criterion.
 - **What it proves:** these models said this about this exact task and output. **It doesn't guarantee the output is correct**: reviewers see only the text, can miss things, and a re-run can give a different verdict. The paying agent picks the task, so a receiver should check it's the task it actually asked for. The receipt says all this, and the service keeps no copy: save it.
 - Reviews usually take seconds but can take a few minutes if a provider is slow: set your HTTP timeout to at least 300 seconds. Each IP address gets up to 10 failed (uncharged) reviews a day, plus one for each successful review.
 - The task and output go to the AI companies running the reviewers, like judge submissions (see [PRIVACY.md](PRIVACY.md)). Leave secrets and personal data out.
@@ -184,7 +191,7 @@ If the other side never joins, your join is released after about a minute and **
 npm install agent-referee-client x402-fetch
 ```
 
-On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.7.0 ([changelog](CHANGELOG.md)).
+On [npm](https://www.npmjs.com/package/agent-referee-client). Current version: 0.8.0 ([changelog](CHANGELOG.md)).
 
 ```js
 import { AgentReferee } from "agent-referee-client";
@@ -194,7 +201,7 @@ const signer = await createSigner("base", process.env.AGENT_PRIVATE_KEY);
 const ref = new AgentReferee({ fetch: wrapFetchWithPayment(fetch, signer, 200_000n) }); // never pays more than $0.20 per request
 ```
 
-The last argument caps what one request may cost, in USDC's smallest unit (1,000,000 = $1). Raise it to `250_000n` for `judge-2` or `review-3`, or `500_000n` for `judge-3`.
+The last argument caps what one request may cost, in USDC's smallest unit (1,000,000 = $1). Raise it to `200_000n` for `judge-2` or `review-3`, or `350_000n` for `judge-3`.
 
 Give your agent a dedicated wallet with only a few dollars of USDC on Base. The client has no dependencies of its own (plain `fetch` + Web Crypto), runs in Node 18+, Deno, Bun, browsers and Cloudflare Workers, and ships TypeScript types. There's no testnet instance yet; the cheapest real match is 2 cents.
 
