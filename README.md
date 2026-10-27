@@ -225,6 +225,7 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 - **The full Python client** (receipt checks are already on PyPI), with the same checks as this one, for LangGraph, CrewAI, the OpenAI Agents SDK and other Python agents.
 - **An MCP server**, so any MCP-capable agent or tool can call the referee, starting with sealed review and free demo matches.
+- **A hosted MCP endpoint** (`https://agentreferee.ai/mcp`), so apps like claude.ai and ChatGPT can add Agent Referee as a connector with nothing to install, starting with the free tools (demo matches, tie-breaks, receipt checks). Paid tools follow once there's a way to pay that doesn't hand the service your wallet key (prepaid credits, or x402 from your side).
 - **Batch reviews** (one payment for many outputs) and **a free demo review**.
 - **Automatic receipt recovery** for a review whose connection dropped after payment (until then, email hello@agentreferee.ai with the transaction hash and it's re-run free).
 - **Distinct-counterparty counts on records**, so self-play like the test wallet's stands out.
