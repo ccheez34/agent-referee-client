@@ -313,6 +313,8 @@ See [`examples/`](../examples) for complete scripts.
 | `[["a","b","c"], ["d","e","f"]]` | Up to 5 agreed sets; one is drawn at random. |
 | `{ "picks": { "buyer": "claude-opus-5-5", "seller": "openai/gpt-6-luna" } }` | `judge-3` with two parties only. Each agent names one judge; the third is drawn at random from a company neither picked, and the seat order is shuffled. Neither side controls the majority. |
 
+**Opt-in models.** `GET /judge` → `opt_in_models` also lists models from Mistral (EU) and from DeepSeek, Qwen, Kimi and GLM (China). You can name them in an exact list, an agreed set, a judge-3 pick, or a review's `panel`, but they're never drawn at random: `"rotate"` and the drawn third judge of `picks` use `model_pool` only. Their requests go through OpenRouter only to hosts that don't collect request data. If your data can't go to these companies or regions, just don't name them.
+
 Every panel uses models from different AI companies; a list that repeats a company is refused before anyone pays.
 
 The draw happens when the match is created, before anyone pays or submits, so it can't be steered toward either side. The match status shows the chosen panel and `judge.panel_selection` (how it was chosen and, for sets, the options), and both are in the signed receipt. Every vote also records `model_reported`, the exact model version the AI company says answered. `check.ok` fails if the receipt's panel doesn't match what you agreed. Sealed review takes the same `panel` option (1 model for `review`, 3 for `review-3`), except `picks`, which needs two parties.
