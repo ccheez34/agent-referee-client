@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.1 (unreleased)
+## 0.8.1 (2026-10-28)
 
 - **Receipts in a format this version doesn't know are refused, never passed.** The coming multi-part review and
   judge tiers add a `receipt_format` field. `verifyOutcome` and `verifyReviewOutcome` (and so every `check`) now
