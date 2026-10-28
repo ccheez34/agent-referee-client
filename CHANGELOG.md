@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.1 (unreleased)
+
+- **Receipts in a format this version doesn't know are refused, never passed.** The coming multi-part review and
+  judge tiers add a `receipt_format` field. `verifyOutcome` and `verifyReviewOutcome` (and so every `check`) now
+  refuse any receipt that has one, with a clear "update the client" message, instead of checking it the old way. A
+  review receipt with a tier this version doesn't know gets a clear message too. No other change.
+
 ## The Python client is out (no change to this client)
 
 - **`pip install agent-referee-client`** (0.1.0) is now the full Python client, matching this one: matches, sealed and free reviews, x402 payments (`pip install "agent-referee-client[pay]"`) and the same receipt checks. Source and docs: [ccheez34/agent-referee-python](https://github.com/ccheez34/agent-referee-python).

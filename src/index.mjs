@@ -724,11 +724,25 @@ function checkJudgeDecision(p, problems, trusts) {
  * verdict and tally recompute from the votes by the published rule. Doesn't check the signature: use
  * verifyReview (or verifySignature) for that. Returns { ok, problems, trusts }.
  */
+// Receipt formats this client can check. Today's receipts have no `receipt_format` field; the multi-part tiers
+// (review-multi-v1, judge-multi-v1) will add one. Any other format is refused, never checked the old way: an old
+// check could recompute the verdict and miss what the new format changed.
+const KNOWN_RECEIPT_FORMATS = [];
+function formatProblem(p) {
+  if (p && typeof p === "object" && "receipt_format" in p && !KNOWN_RECEIPT_FORMATS.includes(p.receipt_format))
+    return `This receipt uses the ${String(p.receipt_format).slice(0, 60)} format, which this version of agent-referee-client can't check, so nothing was confirmed. Update the client (npm install agent-referee-client@latest).`;
+  return null;
+}
+
 export async function verifyReviewOutcome(receipt, opts = {}) {
   const p = receipt?.payload ?? receipt;
   const problems = [];
   const trusts = ["Each reviewer's verdict is that AI model's judgment: auditable (model, prompt fingerprint), not recomputable, and not a guarantee the output is correct."];
   if (p?.type !== "review") return { ok: false, problems: ["Not a sealed-review receipt."], trusts };
+  const fp = formatProblem(p);
+  if (fp) return { ok: false, problems: [fp], trusts };
+  if (!["review", "review-3"].includes(p.tier))
+    return { ok: false, problems: [`This client doesn't know the ${String(p.tier).slice(0, 40)} review tier, so nothing was confirmed. Update the client (npm install agent-referee-client@latest).`], trusts };
   if (opts.tier && p.tier !== opts.tier) problems.push(`This review is ${p.tier}, not ${opts.tier}.`);
   if (opts.output !== undefined && (await sha256Hex(opts.output)) !== p.output_sha256) problems.push("This review is about a different output than the one you have.");
   if (opts.task !== undefined && (await sha256Hex(opts.task)) !== p.task_sha256) problems.push("This review is for a different task than the one you have.");
@@ -783,6 +797,8 @@ export async function verifyOutcome(receipt, opts = {}) {
   const problems = [];
   const trusts = [];
   if (!p?.tier || !p?.outcome) return { ok: false, recomputed: false, problems: ["Not a receipt payload."], trusts };
+  const fp = formatProblem(p);
+  if (fp) return { ok: false, recomputed: false, problems: [fp], trusts, evidence: [] };
   const out = p.outcome;
   const proof = p.proof ?? {};
 
