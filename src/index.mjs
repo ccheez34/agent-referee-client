@@ -718,12 +718,6 @@ function checkJudgeDecision(p, problems, trusts) {
   if (out.tally && canonicalJson(out.tally) !== canonicalJson(tally)) problems.push("The vote tally doesn't match the votes.");
 }
 
-/**
- * Check a sealed-review receipt offline, without the network: that it's a review (never a match receipt), that
- * it's about exactly the task and output you pass, that the votes come from the committed reviewers, and that the
- * verdict and tally recompute from the votes by the published rule. Doesn't check the signature: use
- * verifyReview (or verifySignature) for that. Returns { ok, problems, trusts }.
- */
 // Receipt formats this client can check. Today's receipts have no `receipt_format` field; the multi-part tiers
 // (review-multi-v1, judge-multi-v1) will add one. Any other format is refused, never checked the old way: an old
 // check could recompute the verdict and miss what the new format changed.
@@ -734,6 +728,12 @@ function formatProblem(p) {
   return null;
 }
 
+/**
+ * Check a sealed-review receipt offline, without the network: that it's a review (never a match receipt), that
+ * it's about exactly the task and output you pass, that the votes come from the committed reviewers, and that the
+ * verdict and tally recompute from the votes by the published rule. Doesn't check the signature: use
+ * verifyReview (or verifySignature) for that. Returns { ok, problems, trusts }.
+ */
 export async function verifyReviewOutcome(receipt, opts = {}) {
   const p = receipt?.payload ?? receipt;
   const problems = [];
@@ -909,6 +909,8 @@ export async function verifySeries(receipts) {
   const ps = (receipts ?? []).map((r) => r?.payload ?? r).filter(Boolean);
   const problems = [];
   if (!ps.length) return { ok: false, problems: ["No receipts given."], tally: null };
+  const fp = ps.map(formatProblem).find(Boolean);
+  if (fp) return { ok: false, problems: [fp], tally: null };
   const gameOf = (p) => p.series?.game ?? 1;
   ps.sort((a, b) => gameOf(a) - gameOf(b));
   const seriesId = ps[0].series?.series_id ?? ps[0].match_id;

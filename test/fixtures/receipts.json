@@ -1,0 +1,185 @@
+{
+ "_note": "Receipt payloads made by the server's own code (from the Python client's cross-language vectors). Signatures aren't needed: these tests cover verifyOutcome / verifyReviewOutcome, which don't check them.",
+ "judge_3": {
+  "service": "agent-referee",
+  "match_id": "91002eda5e703fe0fa62a9ab",
+  "tier": "judge-3",
+  "title": null,
+  "parties": [
+   "buyer",
+   "seller"
+  ],
+  "decided_at": "2026-10-28T17:19:47.341Z",
+  "outcome": {
+   "winner": "buyer",
+   "decision_rule": "majority",
+   "tally": {
+    "buyer": 2,
+    "seller": 1,
+    "mistrial": 0
+   },
+   "votes": [
+    {
+     "panelist": 1,
+     "model": "openai/gpt-6-luna",
+     "order": "sorted",
+     "winner": "buyer",
+     "confidence": "high",
+     "rule_applied": "Fake staging answer.",
+     "reasoning": "Fake staging answer.",
+     "model_reported": "openai/gpt-6-luna"
+    },
+    {
+     "panelist": 2,
+     "model": "google/gemini-3.7-flash",
+     "order": "reversed",
+     "winner": "seller",
+     "confidence": "high",
+     "rule_applied": "Fake staging answer.",
+     "reasoning": "Fake staging answer.",
+     "model_reported": "google/gemini-3.7-flash"
+    },
+    {
+     "panelist": 3,
+     "model": "claude-haiku-5-5",
+     "order": "sorted",
+     "winner": "buyer",
+     "confidence": "high",
+     "rule_applied": "Fake staging answer.",
+     "reasoning": "Fake staging answer.",
+     "model_reported": "claude-haiku-5-5"
+    }
+   ]
+  },
+  "proof": {
+   "rules_sha256": "1b55acac726531aa5311a4e18cddfd9c92b09af050a9fa8675d8921930f3fd6c",
+   "submission_sha256": {
+    "buyer": "5e5a4abe8cc907f31a8fa3ab7d516cfd7eb144def6ce82a33ed4782d41996d02",
+    "seller": "d0468ce97ca615319594ab7cb40850c112ff1638787078ec5526825c25e4e6a8"
+   },
+   "judge": {
+    "model": "openai/gpt-6-luna",
+    "temperature": null,
+    "format_version": "agent-referee-judge-v4",
+    "prompt_sha256": "e07a075b94747af127b34137d2f6e95d6b0a09ea516d7271e48429b0aaeef985",
+    "panel": [
+     {
+      "model": "openai/gpt-6-luna",
+      "order": "sorted"
+     },
+     {
+      "model": "google/gemini-3.7-flash",
+      "order": "reversed"
+     },
+     {
+      "model": "claude-haiku-5-5",
+      "order": "sorted"
+     }
+    ],
+    "decision_rule": "majority",
+    "panel_selection": {
+     "mode": "rotate",
+     "pool": [
+      "claude-opus-5-5",
+      "claude-sonnet-5-5",
+      "claude-haiku-5-5",
+      "openai/gpt-6-luna",
+      "google/gemini-4-argon",
+      "google/gemini-3.7-flash"
+     ]
+    }
+   }
+  },
+  "paid_by": {
+   "buyer": "0x1111111111111111111111111111111111111111",
+   "seller": "0x2222222222222222222222222222222222222222"
+  }
+ },
+ "review_3": {
+  "type": "review",
+  "service": "Agent Referee",
+  "review_id": "fix1",
+  "tier": "review-3",
+  "created_at": "2026-10-26T17:44:06.521Z",
+  "network": "base",
+  "payer": "0xabc",
+  "title": "\u00dcn\u00efcode",
+  "task_sha256": "31bb0d97984de2800fa7709081b603b35492e28e29b9814219827bba487defef",
+  "output_sha256": "79ff342b993486d7b9af595dc484e1ab9fc7ff1b47b308334ff6dd663f846fde",
+  "criteria": [
+   {
+    "name": "accuracy",
+    "weight": 3
+   },
+   {
+    "name": "brevity",
+    "weight": 1
+   }
+  ],
+  "reviewers": {
+   "models": [
+    "claude-opus-5-5",
+    "openai/gpt-6-luna",
+    "google/gemini-3.7-flash"
+   ],
+   "temperature": null,
+   "format_version": "agent-referee-review-v1",
+   "prompt_sha256": "7ce9e91570a7728573bf5e310415a64f1f346c9a320f7152cd644443dbee4ad4",
+   "decision_rule": "majority"
+  },
+  "votes": [
+   {
+    "reviewer": 1,
+    "model": "claude-opus-5-5",
+    "verdict": "pass",
+    "confidence": "high",
+    "issues": [],
+    "reasoning": "Fine.\tTab",
+    "scores": {
+     "accuracy": 9,
+     "brevity": 8
+    },
+    "total": 35
+   },
+   {
+    "reviewer": 2,
+    "model": "openai/gpt-6-luna",
+    "verdict": "pass",
+    "confidence": "high",
+    "issues": [],
+    "reasoning": "Fine.\tTab",
+    "scores": {
+     "accuracy": 10,
+     "brevity": 7
+    },
+    "total": 37
+   },
+   {
+    "reviewer": 3,
+    "model": "google/gemini-3.7-flash",
+    "verdict": "needs_changes",
+    "confidence": "high",
+    "issues": [
+     "Emoji \u00abx\u00bb"
+    ],
+    "reasoning": "Fine.\tTab",
+    "scores": {
+     "accuracy": 6,
+     "brevity": 9
+    },
+    "total": 27
+   }
+  ],
+  "result": {
+   "verdict": "pass",
+   "tally": {
+    "pass": 2,
+    "needs_changes": 1,
+    "fail": 0,
+    "cannot_assess": 0
+   },
+   "unanimous": false
+  },
+  "note": "A review records what these AI models said about this exact output. It is not a guarantee the output is correct."
+ }
+}

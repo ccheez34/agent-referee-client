@@ -17,6 +17,7 @@
   "bugs": { "url": "https://github.com/ccheez34/agent-referee-client/issues" },
   "keywords": ["ai-agents", "x402", "multi-agent", "tie-breaker", "ai-judge", "ai-review", "llm-as-judge", "commit-reveal", "randomness", "usdc", "base"],
   "license": "MIT",
+  "scripts": { "test": "node --test" },
   "engines": { "node": ">=18" },
   "peerDependencies": { "x402-fetch": ">=1.2.0" },
   "peerDependenciesMeta": { "x402-fetch": { "optional": true } }

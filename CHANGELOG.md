@@ -5,7 +5,9 @@
 - **Receipts in a format this version doesn't know are refused, never passed.** The coming multi-part review and
   judge tiers add a `receipt_format` field. `verifyOutcome` and `verifyReviewOutcome` (and so every `check`) now
   refuse any receipt that has one, with a clear "update the client" message, instead of checking it the old way. A
-  review receipt with a tier this version doesn't know gets a clear message too. No other change.
+  review receipt with a tier this version doesn't know gets a clear message too, and `verifySeries` refuses a
+  series that includes such a receipt. No other change.
+- Tests: `npm test` runs `node --test` (the refusal cases, against real receipts from the server's code).
 
 ## The Python client is out (no change to this client)
 
