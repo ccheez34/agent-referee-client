@@ -181,5 +181,7 @@
    "unanimous": false
   },
   "note": "A review records what these AI models said about this exact output. It is not a guarantee the output is correct."
- }
+ },
+ "review_3_task": "Traduce \u00abhola\u00bb al ingl\u00e9s \u2014 solo la palabra. \"Quote\" \\ back\nnew line \u2713",
+ "review_3_output": "hello \ud83d\udc4b"
 }

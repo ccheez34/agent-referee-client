@@ -1,45 +1,61 @@
 // Receipts in a format this version doesn't know (the coming multi-part tiers) are refused clearly, never passed.
-// The judge case matters most: a receipt that kept tier "judge-3" and only added receipt_format would otherwise pass,
-// because the verdict recomputes from the votes. Run: node --test test/
+// The judge case is the dangerous one: a receipt that kept tier "judge-3" and only added receipt_format would pass the
+// old checks, because the verdict recomputes from the votes. The Python client's tests/test_unit.py runs the same
+// cases. Run: npm test
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { verifyOutcome, verifyReviewOutcome, verifySeries } from "../src/index.mjs";
+import { canonicalJson, sha256Hex, verifyOutcome, verifyReviewOutcome, verifySeries } from "../src/index.mjs";
 
 const fx = JSON.parse(readFileSync(new URL("./fixtures/receipts.json", import.meta.url), "utf8"));
-const CANT = "this version of agent-referee-client can't check";
+const judge = fx.judge_3, review = fx.review_3, task = fx.review_3_task, output = fx.review_3_output;
+const FORMAT_MSG = "format, which this version of agent-referee-client can't check, so nothing was confirmed. Update the client (";
 
-test("control: today's judge-3 and review-3 receipts still check out", async () => {
-  assert.equal((await verifyOutcome(fx.judge_3)).ok, true);
-  assert.equal((await verifyReviewOutcome(fx.review_3)).ok, true);
+async function reviewMulti() {
+  const { output_sha256, ...r } = review;
+  const pieces = [{ index: 1, name: "", sha256: await sha256Hex("a"), chars: 1 }, { index: 2, name: "", sha256: await sha256Hex("b"), chars: 1 }];
+  return { ...r, tier: "review-3x2", receipt_format: "review-multi-v1", pieces, pieces_sha256: await sha256Hex(canonicalJson(pieces)) };
+}
+
+test("control: today's receipts still pass", async () => {
+  assert.equal((await verifyOutcome(judge)).ok, true);
+  assert.equal((await verifyReviewOutcome(review)).ok, true);
+  assert.equal((await verifyReviewOutcome(review, { task, output, tier: "review-3" })).ok, true);
 });
 
-test("judge receipts with any receipt_format are refused, even with tier judge-3", async () => {
+test("judge receipts with any format are refused, even as judge-3", async () => {
   for (const fmt of ["judge-multi-v1", null, "foo"]) {
-    const r = await verifyOutcome({ ...fx.judge_3, receipt_format: fmt });
-    assert.equal(r.ok, false);
-    assert.match(r.problems[0], new RegExp(CANT));
+    const c = await verifyOutcome({ ...judge, receipt_format: fmt });
+    assert.equal(c.ok, false, String(fmt));
+    assert.ok(c.problems[0].includes(FORMAT_MSG), c.problems[0]);
   }
-  assert.match((await verifyOutcome({ ...fx.judge_3, receipt_format: null })).problems[0], /the null format/); // as Python prints it
-  assert.equal((await verifyOutcome({ ...fx.judge_3, tier: "judge-3x2" })).ok, false);
+  assert.ok((await verifyOutcome({ ...judge, receipt_format: null })).problems[0].includes("uses the null format")); // as Python prints it
+  const c = await verifyOutcome({ ...judge, tier: "judge-3x2" });
+  assert.equal(c.ok, false);
+  assert.ok(c.problems[0].includes('Unknown tier "judge-3x2"'), c.problems[0]);
 });
 
-test("review-multi-v1 receipts are refused clearly, with or without the texts", async () => {
-  const { output_sha256, ...rest } = fx.review_3;
-  const multi = { ...rest, tier: "review-3x2", receipt_format: "review-multi-v1", pieces: [], pieces_sha256: "0".repeat(64) };
-  for (const opts of [{}, { task: "t", output: "a" }]) {
-    const r = await verifyReviewOutcome(multi, opts);
-    assert.equal(r.ok, false);
-    assert.match(r.problems[0], new RegExp(CANT));
+test("review receipts with any format are refused, with or without the texts", async () => {
+  for (const r of [await reviewMulti(), { ...review, receipt_format: null }, { ...review, receipt_format: "foo" }]) {
+    for (const opts of [{}, { task, output }]) {
+      const c = await verifyReviewOutcome(r, opts);
+      assert.equal(c.ok, false, `${r.receipt_format} ${JSON.stringify(Object.keys(opts))}`);
+      assert.ok(c.problems[0].includes(FORMAT_MSG), c.problems[0]);
+    }
   }
-  const unknownTier = { ...rest, tier: "review-3x2" };
-  const r = await verifyReviewOutcome(unknownTier);
-  assert.equal(r.ok, false);
-  assert.match(r.problems[0], /doesn't know the review-3x2 review tier/);
 });
 
-test("a series containing an unknown-format receipt is refused", async () => {
-  const r = await verifySeries([{ ...fx.judge_3, receipt_format: "judge-multi-v1" }]);
-  assert.equal(r.ok, false);
-  assert.match(r.problems[0], new RegExp(CANT));
+test("unknown review tiers are refused clearly", async () => {
+  const c = await verifyReviewOutcome({ ...review, tier: "review-3x2" });
+  assert.equal(c.ok, false);
+  assert.ok(c.problems[0].includes("doesn't know the review-3x2 review tier, so nothing was confirmed. Update the client ("), c.problems[0]);
+  assert.equal((await verifyReviewOutcome({ ...review, tier: ["review-3"] })).ok, false); // an odd tier value is refused, not a crash
+});
+
+test("a series with an unknown-format receipt anywhere is refused", async () => {
+  for (const series of [[{ ...judge, receipt_format: "judge-multi-v1" }], [judge, { ...judge, receipt_format: null }], [judge, { ...judge, receipt_format: "foo" }]]) {
+    const c = await verifySeries(series);
+    assert.equal(c.ok, false);
+    assert.ok(c.problems[0].includes(FORMAT_MSG), c.problems[0]);
+  }
 });
