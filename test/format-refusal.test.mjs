@@ -9,7 +9,9 @@ import { canonicalJson, sha256Hex, verifyOutcome, verifyReviewOutcome, verifySer
 
 const fx = JSON.parse(readFileSync(new URL("./fixtures/receipts.json", import.meta.url), "utf8"));
 const judge = fx.judge_3, review = fx.review_3, task = fx.review_3_task, output = fx.review_3_output;
-const FORMAT_MSG = "format, which this version of agent-referee-client can't check, so nothing was confirmed. Update the client (";
+const UPDATE = "Update the client (npm install agent-referee-client@latest).";
+const FALSY_AND_ODD = [null, "", 0, false, "foo"]; // every one is refused, not just truthy strings
+const formatMsg = (shown) => `This receipt uses the ${shown} format, which this version of agent-referee-client can't check, so nothing was confirmed. ${UPDATE}`;
 
 async function reviewMulti() {
   const { output_sha256, ...r } = review;
@@ -21,26 +23,28 @@ test("control: today's receipts still pass", async () => {
   assert.equal((await verifyOutcome(judge)).ok, true);
   assert.equal((await verifyReviewOutcome(review)).ok, true);
   assert.equal((await verifyReviewOutcome(review, { task, output, tier: "review-3" })).ok, true);
+  assert.equal((await verifySeries([judge])).ok, true); // so the series refusals below aren't a check that refuses everything
 });
 
 test("judge receipts with any format are refused, even as judge-3", async () => {
-  for (const fmt of ["judge-multi-v1", null, "foo"]) {
+  for (const fmt of ["judge-multi-v1", ...FALSY_AND_ODD]) {
     const c = await verifyOutcome({ ...judge, receipt_format: fmt });
     assert.equal(c.ok, false, String(fmt));
-    assert.ok(c.problems[0].includes(FORMAT_MSG), c.problems[0]);
+    assert.deepEqual(c.problems, [formatMsg(String(fmt))]);
   }
-  assert.ok((await verifyOutcome({ ...judge, receipt_format: null })).problems[0].includes("uses the null format")); // as Python prints it
-  const c = await verifyOutcome({ ...judge, tier: "judge-3x2" });
-  assert.equal(c.ok, false);
-  assert.ok(c.problems[0].includes('Unknown tier "judge-3x2"'), c.problems[0]);
+  for (const tier of ["judge-3x2", ["judge-3"]]) {
+    const c = await verifyOutcome({ ...judge, tier });
+    assert.equal(c.ok, false);
+    assert.deepEqual(c.problems, [`Unknown tier "${String(tier)}".`]);
+  }
 });
 
 test("review receipts with any format are refused, with or without the texts", async () => {
-  for (const r of [await reviewMulti(), { ...review, receipt_format: null }, { ...review, receipt_format: "foo" }]) {
+  for (const r of [await reviewMulti(), ...FALSY_AND_ODD.map((f) => ({ ...review, receipt_format: f }))]) {
     for (const opts of [{}, { task, output }]) {
       const c = await verifyReviewOutcome(r, opts);
       assert.equal(c.ok, false, `${r.receipt_format} ${JSON.stringify(Object.keys(opts))}`);
-      assert.ok(c.problems[0].includes(FORMAT_MSG), c.problems[0]);
+      assert.deepEqual(c.problems, [formatMsg(String(r.receipt_format))]);
     }
   }
 });
@@ -48,14 +52,15 @@ test("review receipts with any format are refused, with or without the texts", a
 test("unknown review tiers are refused clearly", async () => {
   const c = await verifyReviewOutcome({ ...review, tier: "review-3x2" });
   assert.equal(c.ok, false);
-  assert.ok(c.problems[0].includes("doesn't know the review-3x2 review tier, so nothing was confirmed. Update the client ("), c.problems[0]);
+  assert.deepEqual(c.problems, [`This client doesn't know the review-3x2 review tier, so nothing was confirmed. ${UPDATE}`]);
   assert.equal((await verifyReviewOutcome({ ...review, tier: ["review-3"] })).ok, false); // an odd tier value is refused, not a crash
 });
 
 test("a series with an unknown-format receipt anywhere is refused", async () => {
-  for (const series of [[{ ...judge, receipt_format: "judge-multi-v1" }], [judge, { ...judge, receipt_format: null }], [judge, { ...judge, receipt_format: "foo" }]]) {
+  const bad = (f) => ({ ...judge, receipt_format: f });
+  for (const [series, fmt] of [[[bad("judge-multi-v1")], "judge-multi-v1"], [[judge, bad(null)], null], [[judge, judge, bad("foo")], "foo"], [[bad(""), judge], ""]]) {
     const c = await verifySeries(series);
     assert.equal(c.ok, false);
-    assert.ok(c.problems[0].includes(FORMAT_MSG), c.problems[0]);
+    assert.deepEqual(c.problems, [formatMsg(String(fmt))]);
   }
 });
