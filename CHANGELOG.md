@@ -1,5 +1,14 @@
 # Changelog
 
+## Service update: capacity and payment protections (no client change needed)
+
+- **"Busy" before you pay.** When the AI reviewers or judges are at capacity, the service answers `503` with `Retry-After` and `{"busy": true, "retry_after_s": N}` before any payment. Nothing is charged and nothing is counted. Paid requests may wait up to 20 s for a slot first. See [When the service is busy](docs/GUIDE.md#when-the-service-is-busy).
+- **Judge matches retry on their own** when the judges are busy (`error_code: "judges_busy"`), keeping verdicts already given. After 4 failed judging runs a match ends `unjudged` and the paying seats are refunded by hand.
+- **Limits fail closed:** if usage limits can't be checked, paid reviews and demo matches are refused (uncharged) rather than let through.
+- A review's time budget now also respects the payment authorization's own deadline.
+- `GET /health` now says `"status": "ok"`, `"paused"`, `"degraded"` (with `reasons`) or `"down"` (it said `"operational"` before).
+- A wallet whose payment fails to settle after the work was delivered is refused afterwards (`403 wallet_blocked`).
+
 ## Service update (2026-10-27, later the same day; no client change needed)
 
 - **Busy AI providers no longer fail reviews at once.** When a provider answers "busy" (429, e.g. too many concurrent requests) or with an error (5xx, 529 overloaded), a reviewer call waits 1–8 seconds (or the provider's numeric `retry-after`, between 1 and 10 s) and tries again, up to 4 tries. All tries for one reviewer end within about 240 seconds (no new try starts with less than 15 s left), so a review still finishes or fails inside the 300-second payment window, and a review that fails is still never charged. Found by a burst test of 30 simultaneous reviews.
