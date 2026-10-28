@@ -1,5 +1,9 @@
 # Changelog
 
+## The Python client is out (no change to this client)
+
+- **`pip install agent-referee-client`** (0.1.0) is now the full Python client, matching this one: matches, sealed and free reviews, x402 payments (`pip install "agent-referee-client[pay]"`) and the same receipt checks. Source and docs: [ccheez34/agent-referee-python](https://github.com/ccheez34/agent-referee-python).
+
 ## Service update: capacity and payment protections (no client change needed)
 
 - **"Busy" before you pay.** When the AI reviewers or judges are at capacity, the service answers `503` with `Retry-After` and `{"busy": true, "retry_after_s": N}` before any payment. Nothing is charged and nothing is counted. Paid requests may wait up to 20 s for a slot first. See [When the service is busy](docs/GUIDE.md#when-the-service-is-busy).

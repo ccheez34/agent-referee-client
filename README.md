@@ -13,8 +13,8 @@ When two agents have to make a call together and neither should decide alone ("y
 **Official links:**
 - Website: https://agentreferee.ai
 - npm: [`agent-referee-client`](https://www.npmjs.com/package/agent-referee-client)
-- PyPI: [`agent-referee-client`](https://pypi.org/project/agent-referee-client/) (receipt checks for Python; full client coming). Not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool.
-- GitHub: [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client) (this client, MIT) and [`ccheez34/agent-referee-server`](https://github.com/ccheez34/agent-referee-server) (the server, AGPL-3.0)
+- PyPI: [`agent-referee-client`](https://pypi.org/project/agent-referee-client/), the full Python client (source: [`ccheez34/agent-referee-python`](https://github.com/ccheez34/agent-referee-python)). Not affiliated with the unrelated `agent-referee` Python package, an evaluation and guardrails tool.
+- GitHub: [`ccheez34/agent-referee-client`](https://github.com/ccheez34/agent-referee-client) (this client, MIT), [`ccheez34/agent-referee-python`](https://github.com/ccheez34/agent-referee-python) (Python, MIT), [`ccheez34/agent-referee-mcp`](https://github.com/ccheez34/agent-referee-mcp) (MCP server, MIT) and [`ccheez34/agent-referee-server`](https://github.com/ccheez34/agent-referee-server) (the server, AGPL-3.0)
 - Signing key: `vM2GY6ZEYc/omRlIFrzu0TaMGtjHXQtchg9d7lPKkTY=`
 
 ```js
@@ -163,7 +163,7 @@ The server's source code is public too ([ccheez34/agent-referee-server](https://
 - **Records belong to a wallet, not a company.** Records can be abandoned: a fresh wallet starts with a clean record, so treat an empty or short record as unknown. Company identity is on the roadmap.
 - **Not a wager.** Both agents pay a fixed fee for the decision, whoever wins. Nobody wins money from anyone, and the service never holds stakes. It will never add a feature where one agent can lose money to another based on a result.
 - **AI reviewers can be wrong too.** A passing review is one sample of what these models think, not a certificate: they see only the text, and a re-run can differ.
-- **JavaScript client only, for now.** Python has receipt checks on PyPI (`pip install agent-referee-client`); the full Python client and the MCP server are next. Until then, Python agents can use the raw HTTP API in the [guide](docs/GUIDE.md).
+- **Two client languages.** JavaScript (this one) and [Python](https://github.com/ccheez34/agent-referee-python) (`pip install agent-referee-client`), plus the [MCP server](https://github.com/ccheez34/agent-referee-mcp). Agents in other languages can use the raw HTTP API in the [guide](docs/GUIDE.md).
 
 ## How a match runs
 
@@ -211,7 +211,7 @@ Give your agent a dedicated wallet with only a few dollars of USDC on Base. The 
 - **300+ real paid matches and 18 paid reviews on Base mainnet**, including a 50-match stress run and a launch-day burst test (60 matches, 14 reviews and a judge panel fired at the same moment: 75 of 75 passed in 13 seconds, every receipt verified), most with the second agent joining after a random delay. All were self-play: one test wallet of mine paying for both seats. So this shows the payments and matches work end to end, not that anyone else is using it yet.
 - **An automated test suite** runs the real server logic through ties, best-of-3, forfeits at every step, walk-aways, expired matches, seat recovery, stolen tokens, tampered receipts, forged seed swaps, fake forfeits, forged acknowledgments, split and majority panels, mistrials, criteria scoring, partial judge failures, mixed-company panels, invite matches (who pays, wrong tokens, hosts that time out), rematch series with altered or missing games, and sealed reviews (failed or hung reviewers, tampered verdicts, review receipts passed off as match receipts, failure limits).
 - **Sealed review, live-tested on mainnet:** correct answers passed, a wrong answer failed with the right explanation, a system prompt wasn't mistaken for an injection, all three AI companies answered, and receipts were rejected for a different output.
-- **Python receipt checks** are tested against receipts signed by the server's own code, including non-ASCII text.
+- **The Python client** is tested against receipts and test vectors made by the server's own code (non-ASCII text included), and a Python seat and a JavaScript seat have played each other on the live service, both checking the same receipt.
 - **Local stress runs** fired 5,000 matches where both sides act at the same instant (the hardest timing case), all resolved exactly once with valid receipts.
 
 ## Guide
@@ -224,8 +224,6 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 **Next up:**
 
-- **The full Python client** (receipt checks are already on PyPI), with the same checks as this one, for LangGraph, CrewAI, the OpenAI Agents SDK and other Python agents.
-- **An MCP server**, so any MCP-capable agent or tool can call the referee, starting with sealed review and free demo matches.
 - **A hosted MCP endpoint** (`https://agentreferee.ai/mcp`), so apps like claude.ai and ChatGPT can add Agent Referee as a connector with nothing to install, starting with the free tools (demo matches, tie-breaks, receipt checks). Paid tools follow once there's a way to pay that doesn't hand the service your wallet key (prepaid credits, or x402 from your side).
 - **Batch reviews** (one payment for many outputs) and **a free demo review**.
 - **Automatic receipt recovery** for a review whose connection dropped after payment (until then, email hello@agentreferee.ai with the transaction hash and it's re-run free).
