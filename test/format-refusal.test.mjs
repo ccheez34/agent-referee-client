@@ -26,13 +26,19 @@ test("control: today's receipts still pass", async () => {
   assert.equal((await verifySeries([judge])).ok, true); // so the series refusals below aren't a check that refuses everything
 });
 
-test("judge receipts with any format are refused, even as judge-3", async () => {
-  for (const fmt of ["judge-multi-v1", ...FALSY_AND_ODD]) {
+test("judge receipts with an unknown format are refused; judge-multi-v1 only on its own tiers", async () => {
+  // Since 0.10.0 judge-multi-v1 is checked (test/multi-judge.test.mjs runs the server's vectors), but only on
+  // judge-3x2 and judge-3x3: on judge-3 it would otherwise recompute from the votes and pass.
+  for (const fmt of ["judge-multi-v2", "review-multi-v1", ...FALSY_AND_ODD]) {
     const c = await verifyOutcome({ ...judge, receipt_format: fmt });
     assert.equal(c.ok, false, String(fmt));
     assert.deepEqual(c.problems, [formatMsg(String(fmt))]);
   }
-  for (const tier of ["judge-3x2", ["judge-3"]]) {
+  const j3 = await verifyOutcome({ ...judge, receipt_format: "judge-multi-v1" });
+  assert.deepEqual(j3.problems, ["A judge-multi-v1 receipt must be for a multi-part judge tier (judge-3x2 or judge-3x3), not judge-3."]);
+  const noFmt = await verifyOutcome({ ...judge, tier: "judge-3x2" });
+  assert.deepEqual(noFmt.problems, ["A judge-3x2 receipt must say receipt_format judge-multi-v1; this one doesn't, so it can't be checked."]);
+  for (const tier of ["judge-9x9", ["judge-3"]]) {
     const c = await verifyOutcome({ ...judge, tier });
     assert.equal(c.ok, false);
     assert.deepEqual(c.problems, [`Unknown tier "${String(tier)}".`]);
@@ -70,7 +76,7 @@ test("unknown review tiers are refused clearly", async () => {
 
 test("a series with an unknown-format receipt anywhere is refused", async () => {
   const bad = (f) => ({ ...judge, receipt_format: f });
-  for (const [series, fmt] of [[[bad("judge-multi-v1")], "judge-multi-v1"], [[judge, bad(null)], null], [[judge, judge, bad("foo")], "foo"], [[bad(""), judge], ""]]) {
+  for (const [series, fmt] of [[[bad("judge-multi-v9")], "judge-multi-v9"], [[judge, bad(null)], null], [[judge, judge, bad("foo")], "foo"], [[bad(""), judge], ""]]) {
     const c = await verifySeries(series);
     assert.equal(c.ok, false);
     assert.deepEqual(c.problems, [formatMsg(String(fmt))]);

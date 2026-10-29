@@ -12,9 +12,16 @@ const JOIN_PATH = {
   judge: "/join/judge",
   "judge-2": "/join/judge-2",
   "judge-3": "/join/judge-3",
+  "judge-3x2": "/join/judge-3x2",
+  "judge-3x3": "/join/judge-3x3",
 };
 
-const JUDGE_TIERS = ["judge", "judge-2", "judge-3"];
+const JUDGE_TIERS = ["judge", "judge-2", "judge-3", "judge-3x2", "judge-3x3"];
+/** Multi-part judge tiers: how many pieces each side submits. Three judges from three companies read every piece. */
+const JUDGE_MULTI_PIECES = { "judge-3x2": 2, "judge-3x3": 3 };
+const JUDGE_FORMAT = "judge-multi-v1";
+const JUDGE_MULTI_FORMAT_VERSION = "agent-referee-judge-v5-multi";
+const isMultiJudgeTier = (t) => typeof t === "string" && Object.hasOwn(JUDGE_MULTI_PIECES, t);
 const REVIEW_TIERS = ["review", "review-3", "review-3x2", "review-3x3"];
 /** Multi-part review tiers: how many pieces each takes. Three reviewers from three companies each read every piece. */
 const MULTI_PIECES = { "review-3x2": 2, "review-3x3": 3 };
@@ -231,7 +238,7 @@ export class AgentReferee {
    * Create a match (free). Share the returned match_id with the other agent(s), or pass a shared
    * `key` that every agent uses with the same settings so they all land in the same match.
    * Optional `seat_wallets` ({ alpha: "0x...", beta: "0x..." }) reserves each paid seat for one wallet.
-   * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge"|"judge-2"|"judge-3", seats: string[], title?: string, key?: string,
+   * @param {{tier: "rps"|"rps-bo3"|"weighted"|"draw"|"judge"|"judge-2"|"judge-3"|"judge-3x2"|"judge-3x3", seats: string[], title?: string, key?: string,
    *          seat_wallets?: Record<string, string>,
    *          weights?: Record<string, number>, options?: string[], rules?: string,
    *          criteria?: {name: string, weight: number}[], host_pays?: string}} spec
@@ -532,7 +539,20 @@ export class Seat {
    * @param {{ judgeRetries?: number, retryDelayMs?: number }} [opts] judgeRetries: how many times to retry failed judging (default 2).
    */
   async submit(position, opts = {}) {
-    const r = await this.client._call("POST", `/matches/${this.matchId}/submit`, { seat: this.seat, seat_token: this.token, position });
+    const n = JUDGE_MULTI_PIECES[this.tier];
+    let body;
+    if (n) {
+      // Multi-part judge tiers: the side goes in as n pieces of text (no names, so nothing shows who wrote what).
+      const texts = Array.isArray(position) ? position.map((x) => (typeof x === "string" ? x : x?.text)) : null;
+      if (!texts || texts.length !== n || !texts.every((t) => typeof t === "string" && t.trim()))
+        throw new RefereeError(`${this.tier} takes your side as exactly ${n} pieces: an array of strings (or of { text }). Nothing was sent.`, 400, {});
+      body = { seat: this.seat, seat_token: this.token, pieces: texts.map((text) => ({ text })) };
+      this.pieces = texts; // kept so this seat's check confirms the receipt holds exactly these pieces
+    } else {
+      if (typeof position !== "string") throw new RefereeError(`${this.tier} takes your side as one position (a string). Nothing was sent.`, 400, {});
+      body = { seat: this.seat, seat_token: this.token, position };
+    }
+    const r = await this.client._call("POST", `/matches/${this.matchId}/submit`, body);
     await this._addAck(r.ack);
     let st = await this.client.waitFor(this.matchId, (st) => st.phase === "done");
     for (let left = opts.judgeRetries ?? 2; st.phase === "error" && left > 0; left--) {
@@ -694,6 +714,61 @@ function criteriaPick(scores, criteria) {
   return { totals, pick: ranked.length >= 2 && ranked[0][1] !== ranked[1][1] ? ranked[0][0] : null };
 }
 
+/**
+ * The multi-part part of a judge-multi-v1 check: the judges' instruction version, no submission_sha256, each side's
+ * piece records ({index, sha256, chars}, chars in UTF-16 code units) and their pieces_sha256, both sides' pieces in a
+ * judged match (only the submitting side's in a forfeit), three judges from three companies, and (when you pass a
+ * side's pieces, or check with your seat) that side's count, order, sha256 and chars. `given` is { [seat]: texts }.
+ */
+async function checkJudgePieces(p, given, problems) {
+  const n = JUDGE_MULTI_PIECES[p.tier];
+  const proof = p.proof ?? {};
+  const out = p.outcome ?? {};
+  const judge = proof.judge ?? {};
+  if ("submission_sha256" in proof) problems.push("A multi-part judge receipt never has proof.submission_sha256; this one does.");
+  if (judge.format_version !== JUDGE_MULTI_FORMAT_VERSION) problems.push(`The judges' instructions should be ${JUDGE_MULTI_FORMAT_VERSION}; this receipt says ${String(judge.format_version).slice(0, 60)}.`);
+  const parties = [...(p.parties ?? [])].sort();
+  const forfeited = out.forfeited ?? [];
+  const expectSides = out.by_forfeit ? parties.filter((s) => !forfeited.includes(s)) : parties;
+  const pieces = proof.pieces && typeof proof.pieces === "object" && !Array.isArray(proof.pieces) ? proof.pieces : {};
+  const hashes = proof.pieces_sha256 && typeof proof.pieces_sha256 === "object" && !Array.isArray(proof.pieces_sha256) ? proof.pieces_sha256 : {};
+  const sides = Object.keys(pieces).sort();
+  if (canonicalJson(sides) !== canonicalJson(expectSides))
+    problems.push(out.by_forfeit ? "A forfeit receipt must show the pieces of the side that submitted, and only those." : "A judged receipt must have both sides' pieces.");
+  if (canonicalJson(Object.keys(hashes).sort()) !== canonicalJson(sides)) problems.push("pieces_sha256 must name exactly the sides that have pieces.");
+  for (const side of sides) {
+    const recs = pieces[side];
+    if (!Array.isArray(recs) || recs.length !== n) {
+      problems.push(`${side} should have ${n} pieces on ${p.tier}; the receipt lists ${Array.isArray(recs) ? recs.length : "none"}.`);
+      continue;
+    }
+    recs.forEach((r, i) => {
+      const ok = r && typeof r === "object" && r.index === i + 1 && typeof r.sha256 === "string" && /^[0-9a-f]{64}$/.test(r.sha256) && Number.isInteger(r.chars) && r.chars > 0;
+      if (!ok) problems.push(`${side}'s piece ${i + 1} record in the receipt is malformed.`);
+    });
+    if ((await sha256Hex(canonicalJson(recs))) !== hashes[side]) problems.push(`${side}'s pieces_sha256 doesn't match its list of pieces.`);
+  }
+  if (!out.by_forfeit) {
+    const models = (judge.panel ?? []).map((x) => String(x?.model));
+    if (models.length !== 3 || new Set(models.map(companyOfModel)).size !== 3) problems.push("The judges aren't three, from three different AI companies.");
+  }
+  if (given == null) return;
+  for (const [side, texts0] of Object.entries(given)) {
+    const recs = pieces[side];
+    const texts = Array.isArray(texts0) ? texts0.map((x) => (typeof x === "string" ? x : x?.text)) : null;
+    if (!Array.isArray(recs)) { problems.push(`The receipt has no pieces for ${side}.`); continue; }
+    if (!texts || texts.length !== n) { problems.push(`${side} has ${n} pieces on ${p.tier}; you passed ${Array.isArray(texts) ? texts.length : "something that is not a list"}.`); continue; }
+    if (texts.some((t) => typeof t !== "string")) { problems.push(`A piece you passed for ${side} has no text.`); continue; }
+    const hs = await Promise.all(texts.map((t) => sha256Hex(t)));
+    const recHs = recs.map((r) => r?.sha256);
+    if ([...hs].sort().join() === [...recHs].sort().join() && hs.some((h, i) => h !== recHs[i])) { problems.push(`These are ${side}'s pieces, but in a different order.`); continue; }
+    hs.forEach((h, i) => {
+      if (h !== recHs[i]) problems.push(`${side}'s piece ${i + 1} is different from the one in the receipt.`);
+      else if (utf16Length(texts[i]) !== recs[i]?.chars) problems.push(`${side}'s piece ${i + 1} length in the receipt (chars) is wrong.`);
+    });
+  }
+}
+
 /** Re-derive a judge decision from the signed votes and the published rule. The votes themselves are the judges' word. */
 function checkJudgeDecision(p, problems, trusts) {
   const out = p.outcome ?? {};
@@ -733,10 +808,10 @@ function checkJudgeDecision(p, problems, trusts) {
 }
 
 // Receipt formats this client can check, by kind of receipt. Single-piece receipts have no `receipt_format` field;
-// multi-part reviews are review-multi-v1. Any other format (judge-multi-v1 until this client learns it, or a format
+// multi-part reviews are review-multi-v1 and multi-part judge matches judge-multi-v1. Any other format (or a format
 // on the wrong kind of receipt) is refused, never checked the old way: an old check could recompute the verdict and
 // miss what the new format changed.
-const KNOWN_RECEIPT_FORMATS = { review: [MULTI_FORMAT], match: [] };
+const KNOWN_RECEIPT_FORMATS = { review: [MULTI_FORMAT], match: [JUDGE_FORMAT] };
 function formatProblem(p, kind) {
   if (p && typeof p === "object" && "receipt_format" in p && !(KNOWN_RECEIPT_FORMATS[kind] ?? []).includes(p.receipt_format))
     return `This receipt uses the ${String(p.receipt_format).slice(0, 60)} format, which this version of agent-referee-client can't check, so nothing was confirmed. Update the client (npm install agent-referee-client@latest).`;
@@ -872,6 +947,11 @@ export async function verifyOutcome(receipt, opts = {}) {
   if (!p?.tier || !p?.outcome) return { ok: false, recomputed: false, problems: ["Not a receipt payload."], trusts };
   const fp = formatProblem(p, "match");
   if (fp) return { ok: false, recomputed: false, problems: [fp], trusts, evidence: [] };
+  const multiJudge = p.receipt_format === JUDGE_FORMAT;
+  if (multiJudge && !isMultiJudgeTier(p.tier))
+    return { ok: false, recomputed: false, problems: [`A ${JUDGE_FORMAT} receipt must be for a multi-part judge tier (judge-3x2 or judge-3x3), not ${String(p.tier).slice(0, 40)}.`], trusts, evidence: [] };
+  if (!multiJudge && isMultiJudgeTier(p.tier))
+    return { ok: false, recomputed: false, problems: [`A ${p.tier} receipt must say receipt_format ${JUDGE_FORMAT}; this one doesn't, so it can't be checked.`], trusts, evidence: [] };
   const out = p.outcome;
   const proof = p.proof ?? {};
 
@@ -918,6 +998,7 @@ export async function verifyOutcome(receipt, opts = {}) {
     trusts.push(`That ${(out.forfeited ?? []).join(", ")} missed a deadline is the service's record; it can't be recomputed from the receipt.`);
 
   if (JUDGE_TIERS.includes(p.tier)) {
+    if (multiJudge) await checkJudgePieces(p, opts.pieces ?? (me?.pieces ? { [me.seat]: me.pieces } : undefined), problems);
     if (!out.by_forfeit) checkJudgeDecision(p, problems, trusts);
     return done(false);
   }
@@ -1048,8 +1129,15 @@ export function findContradictions(receipt, acks = []) {
       }
     } else if (a.step === "submit") {
       if (forfeited.includes(seat)) flag(`${seat} is listed as forfeiting after the service accepted its submission.`);
-      const h = proof.submission_sha256?.[seat];
-      if (h && h !== a.position_sha256) flag(`${seat}'s submission was changed.`);
+      if (a.receipt_format === JUDGE_FORMAT || p.receipt_format === JUDGE_FORMAT) {
+        // Multi-part judge tiers: the ack names the side's pieces; the receipt must show exactly those.
+        const recs = proof.pieces?.[seat];
+        if (recs === undefined) flag(`${seat}'s accepted pieces are missing from the receipt.`);
+        else if (canonicalJson(recs) !== canonicalJson(a.pieces ?? null) || proof.pieces_sha256?.[seat] !== a.pieces_sha256) flag(`${seat}'s submission was changed.`);
+      } else {
+        const h = proof.submission_sha256?.[seat];
+        if (h && h !== a.position_sha256) flag(`${seat}'s submission was changed.`);
+      }
     } else if (a.step === "join") {
       const paid = p.paid_by?.[seat];
       if (paid && a.paid_by && paid !== a.paid_by) flag(`${seat}'s paying wallet was changed.`);

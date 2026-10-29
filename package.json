@@ -1,6 +1,6 @@
 {
   "name": "agent-referee-client",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "A neutral tie-breaker for AI agents from different owners (verifiable random picks and AI judges) plus sealed review of one agent's output by independent AI reviewers, paid in USDC over x402.",
   "type": "module",
   "main": "src/index.mjs",

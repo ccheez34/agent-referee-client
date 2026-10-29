@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.0 (unreleased)
+
+- **Multi-part judge matches (`judge-3x2`, `judge-3x3`).** `seat.submit([text1, text2])` sends a side's case as 2
+  or 3 pieces (strings, or `{ text }`). A wrong number of pieces, an empty piece, or a single position on these tiers
+  (or pieces on `judge`, `judge-2`, `judge-3`) is refused before anything is sent. The seat keeps its pieces
+  (`seat.pieces`) so its check confirms the receipt holds exactly them.
+- **`judge-multi-v1` receipts are checked**, not refused: `verifyOutcome(receipt, { pieces: { [seat]: texts }, acks })`
+  confirms the judges' instruction version (`agent-referee-judge-v5-multi`), that there's no `submission_sha256`,
+  each side's piece records and `pieces_sha256`, both sides' pieces in a judged match (only the submitting side's in a
+  forfeit), three judges from three AI companies, the majority winner and tally, and, given pieces, their count,
+  order, SHA-256 and length. A signed submit acknowledgment whose pieces differ from the receipt, or a side listed as
+  forfeiting after its submission was accepted, is reported as provable evidence. Tested against the server's 20
+  signed test vectors (`test/multi-judge.test.mjs`).
+- Still refused: unknown receipt formats, `judge-multi-v1` on `judge-3` (or any other tier), a multi-part judge tier
+  without `receipt_format`, and a review format on a match receipt.
+
 ## 0.9.0 (2026-10-28)
 
 - **Multi-part reviews (`review-3x2`, `review-3x3`).** `ref.review({ tier: "review-3x2", task, pieces: [{ name?, text }, ...] })`

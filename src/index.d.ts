@@ -4,7 +4,7 @@ export const DEFAULT_URL: string;
 /** Every address the official service answers on (an invite from any of them works with any of them). */
 export const OFFICIAL_URLS: string[];
 
-export type Tier = "rps" | "rps-bo3" | "weighted" | "draw" | "judge" | "judge-2" | "judge-3";
+export type Tier = "rps" | "rps-bo3" | "weighted" | "draw" | "judge" | "judge-2" | "judge-3" | "judge-3x2" | "judge-3x3";
 /** A weighted scoring criterion for the judge tiers. Weights are whole numbers 1-100. */
 export interface Criterion { name: string; weight: number }
 export type Move = "rock" | "paper" | "scissors";
@@ -343,7 +343,10 @@ export class Seat {
   playRound(value?: string): Promise<MatchStatus>;
   /** Judge tiers: submit your position and wait for the verdict. */
   /** Judge tiers: submit and wait for the verdict. Failed judging is retried for you (default 2 times, free). */
-  submit(position: string, opts?: { judgeRetries?: number; retryDelayMs?: number }): Promise<MatchStatus>;
+  /** judge, judge-2, judge-3: one position. judge-3x2 / judge-3x3: an array of 2 or 3 pieces (strings or { text }), no names. */
+  submit(position: string | (string | { text: string })[], opts?: { judgeRetries?: number; retryDelayMs?: number }): Promise<MatchStatus>;
+  /** Multi-part judge tiers: the pieces this seat submitted (memory only), so its check confirms the receipt holds them. */
+  pieces?: string[];
   /** Judge tiers: run failed judging again (phase "error"). Free; verdicts already given are kept. */
   retryJudge(): Promise<MatchStatus>;
   /** Random tiers: ask for a rematch; once the other party asks too, joins the next game (paid) and returns its Seat. */
@@ -354,7 +357,7 @@ export class Seat {
 }
 
 /** Pass { seat } so the check also confirms the receipt holds exactly your own commitment and reveal. */
-export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { seat?: Seat; acks?: StepAck[] }): Promise<OutcomeCheck>;
+export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { seat?: Seat; acks?: StepAck[]; /** judge-3x2 / judge-3x3: the pieces you hold, by seat. */ pieces?: Record<string, (string | { text: string })[]> }): Promise<OutcomeCheck>;
 /** Check a rematch series from its receipts: hash links, game order and every running tally. Verify signatures separately. */
 export function verifySeries(receipts: (Receipt | Receipt["payload"])[]): Promise<{ ok: boolean; problems: string[]; tally: Tally | null }>;
 /** Standalone, offline signature check for a receipt or step acknowledgment. */

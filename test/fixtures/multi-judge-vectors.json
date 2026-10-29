@@ -1,0 +1,3082 @@
+{
+  "generated_by": "agent-referee-server scripts/gen-multi-judge-vectors.mjs",
+  "receipt_format": "judge-multi-v1",
+  "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI=",
+  "notes": [
+    "Verify the signature (Ed25519 over canonical JSON of payload) against public_key, for the receipt and for every ack.",
+    "Then: receipt_format must be known; tier judge-3x2 (2 pieces per side) or judge-3x3 (3); proof.judge.format_version agent-referee-judge-v5-multi; no proof.submission_sha256; for every side in proof.pieces, proof.pieces_sha256[side] = sha256 hex of canonical JSON of proof.pieces[side], each record {index, sha256, chars} (no name), chars in UTF-16 code units.",
+    "A judged receipt has both sides' pieces, 3 votes from 3 companies, and the majority winner and tally recompute from the votes. A forfeit receipt (outcome.by_forfeit) has the pieces of the side that submitted only.",
+    "Given a seat's own pieces: their count, order, sha256 (UTF-8) and chars must match that seat's records. Given acks: a submit ack's pieces and pieces_sha256 must equal the receipt's for that seat, and a seat with a submit ack can't be listed as forfeiting.",
+    "Each case's expect.reason is a hint for test names, not text a client must print."
+  ],
+  "building_blocks": [
+    {
+      "texts": [
+        "Plan A: $40 in all.\n",
+        "Ships in 2 days."
+      ],
+      "records": [
+        {
+          "index": 1,
+          "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+          "chars": 20
+        },
+        {
+          "index": 2,
+          "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+          "chars": 16
+        }
+      ],
+      "canonical": "[{\"chars\":20,\"index\":1,\"sha256\":\"4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc\"},{\"chars\":16,\"index\":2,\"sha256\":\"c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6\"}]",
+      "pieces_sha256": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
+    },
+    {
+      "texts": [
+        "漢字とemoji 😀 count as UTF-16 code units: 😀 is 2.",
+        "Line endings stay exactly as sent:\r\nCRLF, and a trailing space ",
+        "  \"quotes\" and \\ backslashes, U+2028 here: end."
+      ],
+      "records": [
+        {
+          "index": 1,
+          "sha256": "af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c",
+          "chars": 48
+        },
+        {
+          "index": 2,
+          "sha256": "4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469",
+          "chars": 63
+        },
+        {
+          "index": 3,
+          "sha256": "08551358e35126552a59d21266c2649afd8b64767ef8bc20fe5187b5aad8acce",
+          "chars": 47
+        }
+      ],
+      "canonical": "[{\"chars\":48,\"index\":1,\"sha256\":\"af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c\"},{\"chars\":63,\"index\":2,\"sha256\":\"4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469\"},{\"chars\":47,\"index\":3,\"sha256\":\"08551358e35126552a59d21266c2649afd8b64767ef8bc20fe5187b5aad8acce\"}]",
+      "pieces_sha256": "dccccf636177272c8dbd5a1a97d1d0e9b01e46cb07acd33eb240c9d16ce69036"
+    }
+  ],
+  "cases": [
+    {
+      "id": "valid-3x2",
+      "what": "A judged 2-piece match: alpha wins 2 to 1.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        },
+        "acks": [
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x2",
+              "seat": "alpha",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.171Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "pieces_sha256": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
+            },
+            "signature": "It5hWSKnD9K9q6jvp5jNoB+jEvABzsJy5NZXeigYnEI6yeXPBYEMXlK/cX8cuvzFhcs/piszhKrjMImGFv9wCQ==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          },
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x2",
+              "seat": "beta",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.173Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ],
+              "pieces_sha256": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "signature": "7/1toTXsmhKfe09toQe1BGtbhi7F7BHXmSgeieReWIYXbpIKq8klt4ZaBkRh6az7VulBX9vSI/uEgriL9rZFDw==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": true,
+        "winner": "alpha"
+      }
+    },
+    {
+      "id": "valid-3x3-unicode",
+      "what": "A judged 3-piece match with CJK, emoji, CRLF, U+2028 and escapes in one side; beta wins 2 to 1.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "漢字とemoji 😀 count as UTF-16 code units: 😀 is 2.",
+            "Line endings stay exactly as sent:\r\nCRLF, and a trailing space ",
+            "  \"quotes\" and \\ backslashes, U+2028 here: end."
+          ],
+          "beta": [
+            "Plan B, part 1.",
+            "Plan B, part 2.",
+            "Plan B, part 3."
+          ]
+        },
+        "acks": [
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x3",
+              "seat": "alpha",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.184Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c",
+                  "chars": 48
+                },
+                {
+                  "index": 2,
+                  "sha256": "4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469",
+                  "chars": 63
+                },
+                {
+                  "index": 3,
+                  "sha256": "08551358e35126552a59d21266c2649afd8b64767ef8bc20fe5187b5aad8acce",
+                  "chars": 47
+                }
+              ],
+              "pieces_sha256": "dccccf636177272c8dbd5a1a97d1d0e9b01e46cb07acd33eb240c9d16ce69036"
+            },
+            "signature": "WKVIty1WQYdEKNpwnlMk0QC5HYhnAemqx+VjOBUFDF9YBY/xKFXgElToGMOhJVwipOLPnQV/fBQyCn6cUnWoAw==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          },
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x3",
+              "seat": "beta",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.185Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "009a53522a160fb134c476add9d63bf1d6d1fe47c762f4b468b51739ec09a8d9",
+                  "chars": 15
+                },
+                {
+                  "index": 2,
+                  "sha256": "308356fc167d14f4ed422d8bc38ccef64087788c1dd0b09e08bdd14e4823d57e",
+                  "chars": 15
+                },
+                {
+                  "index": 3,
+                  "sha256": "33252e1a10a3757dedcd7d3f6ce506c6169c600ca07d9578ad1e633d3cbe49e2",
+                  "chars": 15
+                }
+              ],
+              "pieces_sha256": "02a12ce1ad35151b71dfafea536feed9bb0cb0a95cad7aaeec22f7a697273f1a"
+            },
+            "signature": "ugVaa8x+3nfm1OWihPR/qTd3b8uM8GV0lTa0lzibcGPQVEefYBm98djBQOiMmo7IIPts76ee0Sb0VDWBMVYxCw==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x3",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.187Z",
+          "outcome": {
+            "winner": "beta",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 1,
+              "beta": 2,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c",
+                  "chars": 48
+                },
+                {
+                  "index": 2,
+                  "sha256": "4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469",
+                  "chars": 63
+                },
+                {
+                  "index": 3,
+                  "sha256": "08551358e35126552a59d21266c2649afd8b64767ef8bc20fe5187b5aad8acce",
+                  "chars": 47
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "009a53522a160fb134c476add9d63bf1d6d1fe47c762f4b468b51739ec09a8d9",
+                  "chars": 15
+                },
+                {
+                  "index": 2,
+                  "sha256": "308356fc167d14f4ed422d8bc38ccef64087788c1dd0b09e08bdd14e4823d57e",
+                  "chars": 15
+                },
+                {
+                  "index": 3,
+                  "sha256": "33252e1a10a3757dedcd7d3f6ce506c6169c600ca07d9578ad1e633d3cbe49e2",
+                  "chars": 15
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "dccccf636177272c8dbd5a1a97d1d0e9b01e46cb07acd33eb240c9d16ce69036",
+              "beta": "02a12ce1ad35151b71dfafea536feed9bb0cb0a95cad7aaeec22f7a697273f1a"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "FFx21USHCAzEuP/HfPa9gPFs2ub3vCS4d/JxZS4g8YZ5CUy+rOYr5kjGknJFKdQGQOkWWo52t8EmRO/FCe6uDA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": true,
+        "winner": "beta"
+      }
+    },
+    {
+      "id": "valid-forfeit",
+      "what": "beta never submitted: alpha wins by forfeit, and the receipt shows only alpha's pieces.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ]
+        },
+        "acks": [
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x2",
+              "seat": "alpha",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.191Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "pieces_sha256": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
+            },
+            "signature": "ZQ78l/xjQR/m+AbYW8PbbfzZgRcSGrKBtMnVlOG57SscBd/8QMlGyYUIDaNGbDBS7htbBxxH68W1+hKlSSDpBQ==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:30:54.192Z",
+          "outcome": {
+            "winner": "alpha",
+            "by_forfeit": true,
+            "forfeited": [
+              "beta"
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "pB8cjO/sFI3w7zQjfgDMpU2gmVyFAQJ+RR8gxTiVMGbGpGnpdo8AoozTFWBa8SOarFjKxNbVNxHR21xsBKGbDg==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": true,
+        "winner": "alpha",
+        "by_forfeit": true
+      }
+    },
+    {
+      "id": "wrong-piece-text",
+      "what": "alpha holds a different text for its piece 2.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days.!"
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "alpha piece 2 sha256 differs"
+      }
+    },
+    {
+      "id": "pieces-swapped",
+      "what": "alpha's pieces in the wrong order.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Ships in 2 days.",
+            "Plan A: $40 in all.\n"
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "alpha piece order differs"
+      }
+    },
+    {
+      "id": "wrong-count",
+      "what": "alpha holds 3 pieces for a 2-piece tier.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days.",
+            "extra"
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "piece count differs from the tier"
+      }
+    },
+    {
+      "id": "bad-pieces-sha256",
+      "what": "Signed, but beta's pieces_sha256 isn't the hash of its pieces list.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "AfVNF2QasW8ENr1L4IIoKiuCYA/MCovOGUJm1G/nP3phXmvmJdUGnsYudhzc4AyrHJvRBQakfsK0pfY9IlgEAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "beta pieces_sha256 doesn't match pieces"
+      }
+    },
+    {
+      "id": "chars-as-code-points",
+      "what": "Signed and self-consistent, but alpha's piece 1 chars counts code points instead of UTF-16 units.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "漢字とemoji 😀 count as UTF-16 code units: 😀 is 2.",
+            "Line endings stay exactly as sent:\r\nCRLF, and a trailing space ",
+            "  \"quotes\" and \\ backslashes, U+2028 here: end."
+          ],
+          "beta": [
+            "Plan B, part 1.",
+            "Plan B, part 2.",
+            "Plan B, part 3."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x3",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.187Z",
+          "outcome": {
+            "winner": "beta",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 1,
+              "beta": 2,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c",
+                  "chars": 46
+                },
+                {
+                  "index": 2,
+                  "sha256": "4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469",
+                  "chars": 63
+                },
+                {
+                  "index": 3,
+                  "sha256": "08551358e35126552a59d21266c2649afd8b64767ef8bc20fe5187b5aad8acce",
+                  "chars": 47
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "009a53522a160fb134c476add9d63bf1d6d1fe47c762f4b468b51739ec09a8d9",
+                  "chars": 15
+                },
+                {
+                  "index": 2,
+                  "sha256": "308356fc167d14f4ed422d8bc38ccef64087788c1dd0b09e08bdd14e4823d57e",
+                  "chars": 15
+                },
+                {
+                  "index": 3,
+                  "sha256": "33252e1a10a3757dedcd7d3f6ce506c6169c600ca07d9578ad1e633d3cbe49e2",
+                  "chars": 15
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "260e97c393d8347743e246e263633c9bb6563b2e8ca2f5a71e840498a521eb49",
+              "beta": "02a12ce1ad35151b71dfafea536feed9bb0cb0a95cad7aaeec22f7a697273f1a"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "awUvGuMD+qLFZOPqhlSjG6wgNPmwY2E1tN7CjuLu5+fskhq0rLGMH+GIc7CZ1/xzpveS2ql2MOs535UhDUe+CQ==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "alpha piece 1 chars differs"
+      }
+    },
+    {
+      "id": "missing-side",
+      "what": "Signed, judged (not a forfeit), but only alpha's pieces are in the proof.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "1jJDchBLA1v7+yoe0L3quO8LamjrmylJBI+PEE4DFJjaew1cRIpbV8/ZimfnubPD9rtEYV32rT9BvflN9/YZBA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "a judged receipt must have both sides' pieces"
+      }
+    },
+    {
+      "id": "has-submission-sha256",
+      "what": "Signed, but it also carries proof.submission_sha256, which this format never has.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            },
+            "submission_sha256": {
+              "alpha": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+              "beta": "a1fce4363854ff888cff4b8e7875d600c2682390412a8cf79b37d0b11148b0fa"
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "a7ovGezriiFyknnSaC4NEjmKaX9fJ3T5Lx63F9+PZ8nimdL1619CQ27eH1gF5iEUg4AEk6uXChMamqJYeJbxDw==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "unexpected submission_sha256"
+      }
+    },
+    {
+      "id": "bad-winner",
+      "what": "Signed, but the winner doesn't follow from the votes (2 for alpha).",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "beta",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "8Lr3w8UB2+otyo2rlIvb0wrTkptcc6hy5w7b9cW7bj9+7sT3VvVPHIVASqWrgdRmVESR3ft4qDdFukod7n3bBQ==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "winner doesn't recompute"
+      }
+    },
+    {
+      "id": "bad-tally",
+      "what": "Signed, but the tally doesn't match the votes.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 3,
+              "beta": 0,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "d97nsh6/fMqWuTjIim7VpBa2FfKoRUM78iOkSpGF6SH0ZjD0a1iEiIW8AZ8FjNgY1Kz+Us+98M3e3JcVoLzcCw==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "tally doesn't recompute"
+      }
+    },
+    {
+      "id": "two-votes",
+      "what": "Signed, but only 2 votes on a 3-judge tier.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "E/KFPHxCg++FayBp96tuHIiXgkV8j8PgX1TD8H0hnKPxjtEDRH+hRQPc2lVqqA0JhEF27zc8jQQI4S74P2/gDw==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "expected 3 votes"
+      }
+    },
+    {
+      "id": "same-company",
+      "what": "Signed, but two judges from one company.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "google/gemini-3.7-flash",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "google/gemini-3.7-flash",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "V8ZxI9oPfQen8H79jVTxzhpL7MoqBa7NXg9bLuJ25x+hyseklfNv5v1dGaASvp3nMvZN7VF9kJBnbzsTkpmoAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "judges not from three companies"
+      }
+    },
+    {
+      "id": "wrong-format-version",
+      "what": "Signed, but the judges' format_version isn't the multi-part one.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v4",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "l/xlo8kLuf0QRvdFYrqmrn3VdJ2s1vArDQhL6s2lUa+UP9D9+8crwp8S2I9+fbfxrwjmE+T8NGvMcBAzLdJjAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "format_version isn't agent-referee-judge-v5-multi"
+      }
+    },
+    {
+      "id": "unknown-format",
+      "what": "A receipt_format the client doesn't know: refuse and ask to update the client.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v2",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "kVaNb5+piNcAin5u0YFFtFECaIFSlsMmk7FD1F5CxpncoQU3D6C5DmdY5/aUXSRHNjb2WbDzlM/bOJNSwHXLAQ==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "unknown receipt_format"
+      }
+    },
+    {
+      "id": "old-tier-name",
+      "what": "receipt_format judge-multi-v1 but tier judge-3.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "LB2KlmEal6QZpfCRu1azsNwEZH8JC1uL7E6AfIY8eDOZ7dBo9v2dubH0uy3FCJnpQNqQLKzCEgWVTgrYm4dVDA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "tier isn't a multi-part judge tier"
+      }
+    },
+    {
+      "id": "bad-signature",
+      "what": "The payload was changed after signing.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ],
+          "beta": [
+            "Plan B: $35 in all.",
+            "Ships in 5 days."
+          ]
+        }
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "beta",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "signature"
+      }
+    },
+    {
+      "id": "ack-pieces-changed",
+      "what": "alpha's signed submit ack names other pieces than the receipt: the two signed documents prove the change.",
+      "given": {
+        "pieces": {},
+        "acks": [
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x2",
+              "seat": "alpha",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.171Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "pieces_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "signature": "JRkvIIIqwa2UnTaoNfFei8+LqYcSp/kDTgtYqQAU80fE+M6bpvnxAetOD7hWZ94XL4AERRRMavLzDocoy6eeBw==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:19:54.178Z",
+          "outcome": {
+            "winner": "alpha",
+            "decision_rule": "majority",
+            "tally": {
+              "alpha": 2,
+              "beta": 1,
+              "mistrial": 0
+            },
+            "votes": [
+              {
+                "panelist": 1,
+                "model": "claude-sonnet-5-5",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "claude-sonnet-5-5"
+              },
+              {
+                "panelist": 2,
+                "model": "openai/gpt-6-luna",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "openai/gpt-6-luna"
+              },
+              {
+                "panelist": 3,
+                "model": "google/gemini-4-argon",
+                "order": "sorted",
+                "winner": "alpha",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              }
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "beta": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5",
+              "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "alpha's submission was changed (ack contradicts receipt)"
+      }
+    },
+    {
+      "id": "forfeit-after-ack",
+      "what": "The forfeit receipt says beta forfeited, but beta holds a signed submit ack.",
+      "given": {
+        "pieces": {
+          "alpha": [
+            "Plan A: $40 in all.\n",
+            "Ships in 2 days."
+          ]
+        },
+        "acks": [
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x2",
+              "seat": "alpha",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.191Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ],
+              "pieces_sha256": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
+            },
+            "signature": "ZQ78l/xjQR/m+AbYW8PbbfzZgRcSGrKBtMnVlOG57SscBd/8QMlGyYUIDaNGbDBS7htbBxxH68W1+hKlSSDpBQ==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          },
+          {
+            "payload": {
+              "type": "step-ack",
+              "service": "agent-referee",
+              "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+              "tier": "judge-3x2",
+              "seat": "beta",
+              "step": "submit",
+              "accepted_at": "2026-10-29T05:19:54.171Z",
+              "receipt_format": "judge-multi-v1",
+              "pieces": [
+                {
+                  "index": 1,
+                  "sha256": "fc50e3e335fccab7c266e01ee9cc398a46d84040b5249e84c99a0e66e6d2f03e",
+                  "chars": 19
+                },
+                {
+                  "index": 2,
+                  "sha256": "891470ed5ec62a42bf27fd7f8d96abb24a2bdaa56c38b5e2d69cdd4a9c3d9b38",
+                  "chars": 16
+                }
+              ],
+              "pieces_sha256": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
+            },
+            "signature": "hBW+uR5IoCGQuPRdypGZZ0msDYNOwyOdN2nCigLyveafvLja+Ds4cLbDIKZjCFvmL8oV8To/F6U9Neeac6BhAg==",
+            "algorithm": "Ed25519",
+            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "service": "agent-referee",
+          "receipt_format": "judge-multi-v1",
+          "match_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "judge-3x2",
+          "title": "Which plan",
+          "parties": [
+            "alpha",
+            "beta"
+          ],
+          "decided_at": "2026-10-29T05:30:54.192Z",
+          "outcome": {
+            "winner": "alpha",
+            "by_forfeit": true,
+            "forfeited": [
+              "beta"
+            ]
+          },
+          "proof": {
+            "rules_sha256": "a2e5d468e512b466deb0748aba123888e130e4a71f259feb1f88f98be067705b",
+            "pieces": {
+              "alpha": [
+                {
+                  "index": 1,
+                  "sha256": "4b7275bd6b1ba1d51ae6a67b52d2f20d4a8e6f24428f59ccdeb0983560f9c6cc",
+                  "chars": 20
+                },
+                {
+                  "index": 2,
+                  "sha256": "c9d0cbd5f1b6c39060afd8baf6557183d12079626eccfc7c2db9bd0ce68549b6",
+                  "chars": 16
+                }
+              ]
+            },
+            "pieces_sha256": {
+              "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
+            },
+            "judge": {
+              "model": "claude-sonnet-5-5",
+              "temperature": null,
+              "format_version": "agent-referee-judge-v5-multi",
+              "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
+              "panel": [
+                {
+                  "model": "claude-sonnet-5-5",
+                  "order": "sorted"
+                },
+                {
+                  "model": "openai/gpt-6-luna",
+                  "order": "reversed"
+                },
+                {
+                  "model": "google/gemini-4-argon",
+                  "order": "sorted"
+                }
+              ],
+              "decision_rule": "majority",
+              "panel_selection": {
+                "mode": "custom"
+              },
+              "max_tokens": {
+                "claude-sonnet-5-5": 12000,
+                "openai/gpt-6-luna": 4000,
+                "google/gemini-4-argon": 4000
+              }
+            }
+          },
+          "paid_by": {
+            "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        },
+        "signature": "pB8cjO/sFI3w7zQjfgDMpU2gmVyFAQJ+RR8gxTiVMGbGpGnpdo8AoozTFWBa8SOarFjKxNbVNxHR21xsBKGbDg==",
+        "algorithm": "Ed25519",
+        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "beta listed as forfeiting after its submission was accepted"
+      }
+    }
+  ]
+}
