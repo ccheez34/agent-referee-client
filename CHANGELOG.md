@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.0 (unreleased)
+
+- **Multi-part reviews (`review-3x2`, `review-3x3`).** `ref.review({ tier: "review-3x2", task, pieces: [{ name?, text }, ...] })`
+  sends the work as 2 or 3 pieces, and three reviewers from three companies each read every piece. Mistakes (an
+  `output`, or the wrong number of pieces) are refused before anything is sent or paid for.
+- **`review-multi-v1` receipts are checked**, not refused: `verifyReviewOutcome` and `verifyReview` take `pieces` and
+  confirm each piece's SHA-256, length (UTF-16 code units) and name in order, the `pieces_sha256` of the list, that
+  there's no `output_sha256`, three votes from three AI companies each with `issues_dropped`, and the majority verdict
+  and tally. Tested against the server's 17 signed test vectors (`test/multi-review.test.mjs`).
+- Still refused: `judge-multi-v1` and any other format this version doesn't know, a `review-multi-v1` receipt on a
+  single-piece tier or a match receipt, and a multi-part tier without `receipt_format`.
+
 ## 0.8.1 (2026-10-28)
 
 - **Receipts in a format this version doesn't know are refused, never passed.** The coming multi-part review and

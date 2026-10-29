@@ -1,4 +1,4 @@
-// Receipts in a format this version doesn't know (the coming multi-part tiers) are refused clearly, never passed.
+// Receipts in a format this version doesn't know (judge-multi-v1, until the judge tiers are added) are refused clearly, never passed.
 // The judge case is the dangerous one: a receipt that kept tier "judge-3" and only added receipt_format would pass the
 // old checks, because the verdict recomputes from the votes. The Python client's tests/test_unit.py runs the same
 // cases. Run: npm test
@@ -39,8 +39,8 @@ test("judge receipts with any format are refused, even as judge-3", async () => 
   }
 });
 
-test("review receipts with any format are refused, with or without the texts", async () => {
-  for (const r of [await reviewMulti(), ...FALSY_AND_ODD.map((f) => ({ ...review, receipt_format: f }))]) {
+test("review receipts with an unknown format are refused, with or without the texts", async () => {
+  for (const r of [{ ...review, receipt_format: "judge-multi-v1" }, ...FALSY_AND_ODD.map((f) => ({ ...review, receipt_format: f }))]) {
     for (const opts of [{}, { task, output }]) {
       const c = await verifyReviewOutcome(r, opts);
       assert.equal(c.ok, false, `${r.receipt_format} ${JSON.stringify(Object.keys(opts))}`);
@@ -49,10 +49,22 @@ test("review receipts with any format are refused, with or without the texts", a
   }
 });
 
+test("review-multi-v1 is checked, never passed on a shortcut: an incomplete or mislabelled one fails", async () => {
+  // Since 0.9.0 the client knows review-multi-v1 (test/multi-review.test.mjs runs the server's vectors). A receipt
+  // built from a single-piece one is still refused: its votes lack issues_dropped, and it has no pieces to match.
+  const m = await verifyReviewOutcome(await reviewMulti(), { task, pieces: [{ text: "a" }, { text: "b" }] });
+  assert.equal(m.ok, false);
+  assert.ok(m.problems.some((x) => /issues_dropped/.test(x)), JSON.stringify(m.problems));
+  const old = await verifyReviewOutcome({ ...review, receipt_format: "review-multi-v1" }, { task, output });
+  assert.deepEqual(old.problems, ["A review-multi-v1 receipt must be for a multi-part tier (review-3x2 or review-3x3), not review-3."]);
+  const j = await verifyOutcome({ ...judge, receipt_format: "review-multi-v1" }); // a review format on a match receipt
+  assert.deepEqual(j.problems, [formatMsg("review-multi-v1")]);
+});
+
 test("unknown review tiers are refused clearly", async () => {
-  const c = await verifyReviewOutcome({ ...review, tier: "review-3x2" });
+  const c = await verifyReviewOutcome({ ...review, tier: "review-9x9" });
   assert.equal(c.ok, false);
-  assert.deepEqual(c.problems, [`This client doesn't know the review-3x2 review tier, so nothing was confirmed. ${UPDATE}`]);
+  assert.deepEqual(c.problems, [`This client doesn't know the review-9x9 review tier, so nothing was confirmed. ${UPDATE}`]);
   assert.equal((await verifyReviewOutcome({ ...review, tier: ["review-3"] })).ok, false); // an odd tier value is refused, not a crash
 });
 

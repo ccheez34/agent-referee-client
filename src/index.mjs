@@ -15,7 +15,10 @@ const JOIN_PATH = {
 };
 
 const JUDGE_TIERS = ["judge", "judge-2", "judge-3"];
-const REVIEW_TIERS = ["review", "review-3"];
+const REVIEW_TIERS = ["review", "review-3", "review-3x2", "review-3x3"];
+/** Multi-part review tiers: how many pieces each takes. Three reviewers from three companies each read every piece. */
+const MULTI_PIECES = { "review-3x2": 2, "review-3x3": 3 };
+const MULTI_FORMAT = "review-multi-v1";
 const REVIEW_VERDICTS = ["pass", "needs_changes", "fail", "cannot_assess"];
 
 export class RefereeError extends Error {
@@ -390,9 +393,19 @@ export class AgentReferee {
    * verifyReview's answer: the signature, that the receipt is about exactly this task and output, and that the
    * verdict recomputes from the votes. Save the receipt with the output; the service keeps no copy.
    */
-  async review({ tier = "review", task, output, title, criteria, panel } = {}) {
+  async review({ tier = "review", task, output, pieces, title, criteria, panel } = {}) {
     if (this.demo) throw new RefereeError("Sealed review has no demo mode: every review is a real AI call.", 400, {});
     if (!REVIEW_TIERS.includes(tier)) throw new RefereeError(`tier must be one of: ${REVIEW_TIERS.join(", ")}`, 400, {});
+    const n = MULTI_PIECES[tier];
+    if (n) {
+      // Multi-part: the work goes in as `pieces`, never `output`. Checked here so a mistake costs nothing.
+      if (output !== undefined) throw new RefereeError(`${tier} takes the work as pieces: [{ name?, text }], not output. Nothing was sent.`, 400, {});
+      if (!Array.isArray(pieces) || pieces.length !== n) throw new RefereeError(`${tier} takes exactly ${n} pieces: [{ name?, text }]. Nothing was sent.`, 400, {});
+      const r = await this._call("POST", `/${tier}`, { task, pieces, title, criteria, panel });
+      const check = await this.verifyReview(r.receipt, { task, pieces, tier, panel });
+      return { ...r, check };
+    }
+    if (pieces !== undefined) throw new RefereeError(`pieces are for the multi-part tiers (review-3x2, review-3x3); ${tier} takes one output. Nothing was sent.`, 400, {});
     const r = await this._call("POST", `/${tier}`, { task, output, title, criteria, panel });
     const check = await this.verifyReview(r.receipt, { task, output, tier, panel });
     return { ...r, check };
@@ -718,14 +731,58 @@ function checkJudgeDecision(p, problems, trusts) {
   if (out.tally && canonicalJson(out.tally) !== canonicalJson(tally)) problems.push("The vote tally doesn't match the votes.");
 }
 
-// Receipt formats this client can check. Today's receipts have no `receipt_format` field; the multi-part tiers
-// (review-multi-v1, judge-multi-v1) will add one. Any other format is refused, never checked the old way: an old
-// check could recompute the verdict and miss what the new format changed.
-const KNOWN_RECEIPT_FORMATS = [];
-function formatProblem(p) {
-  if (p && typeof p === "object" && "receipt_format" in p && !KNOWN_RECEIPT_FORMATS.includes(p.receipt_format))
+// Receipt formats this client can check, by kind of receipt. Single-piece receipts have no `receipt_format` field;
+// multi-part reviews are review-multi-v1. Any other format (judge-multi-v1 until this client learns it, or a format
+// on the wrong kind of receipt) is refused, never checked the old way: an old check could recompute the verdict and
+// miss what the new format changed.
+const KNOWN_RECEIPT_FORMATS = { review: [MULTI_FORMAT], match: [] };
+function formatProblem(p, kind) {
+  if (p && typeof p === "object" && "receipt_format" in p && !(KNOWN_RECEIPT_FORMATS[kind] ?? []).includes(p.receipt_format))
     return `This receipt uses the ${String(p.receipt_format).slice(0, 60)} format, which this version of agent-referee-client can't check, so nothing was confirmed. Update the client (npm install agent-referee-client@latest).`;
   return null;
+}
+
+const utf16Length = (s) => s.length; // JS strings are UTF-16: .length counts code units, as the receipt does
+
+/**
+ * The multi-part part of a review-multi-v1 check: the receipt's piece list is well formed, pieces_sha256 is the hash
+ * of it, there's no output_sha256, and (when you pass the pieces you hold) each piece's name, sha256 and chars match,
+ * in order. Pieces are { name?, text }; a piece without a name is recorded with name "".
+ */
+async function checkPieces(p, opts, problems) {
+  const n = MULTI_PIECES[p.tier];
+  if ("output_sha256" in p) problems.push("A multi-part receipt never has output_sha256; this one does.");
+  if (opts.output !== undefined) problems.push("This is a multi-part review: check it with pieces, not output.");
+  const recs = p.pieces;
+  if (!Array.isArray(recs) || recs.length !== n) {
+    problems.push(`A ${p.tier} receipt lists ${n} pieces; this one lists ${Array.isArray(recs) ? recs.length : "none"}.`);
+    return;
+  }
+  recs.forEach((r, i) => {
+    const ok = r && typeof r === "object" && r.index === i + 1 && typeof r.name === "string" && typeof r.sha256 === "string" && /^[0-9a-f]{64}$/.test(r.sha256) && Number.isInteger(r.chars) && r.chars > 0;
+    if (!ok) problems.push(`Piece ${i + 1}'s record in the receipt is malformed.`);
+  });
+  if ((await sha256Hex(canonicalJson(recs))) !== p.pieces_sha256) problems.push("pieces_sha256 doesn't match the receipt's list of pieces.");
+  const given = opts.pieces;
+  if (given === undefined) return;
+  if (!Array.isArray(given) || given.length !== n) {
+    problems.push(`This review has ${n} pieces; you passed ${Array.isArray(given) ? given.length : "something that isn't a list"}.`);
+    return;
+  }
+  // The right pieces in the wrong order: say so, rather than listing every piece as different.
+  const hashes = await Promise.all(given.map((g) => (typeof g?.text === "string" ? sha256Hex(g.text) : null)));
+  const sameSet = hashes.every((h) => h !== null) && [...hashes].sort().join() === recs.map((r) => r.sha256).sort().join();
+  if (sameSet && hashes.some((h, i) => h !== recs[i].sha256)) {
+    problems.push("These are the review's pieces, but in a different order.");
+    return;
+  }
+  given.forEach((g, i) => {
+    const r = recs[i];
+    if (typeof g?.text !== "string") return problems.push(`Piece ${i + 1} you passed has no text.`);
+    if (hashes[i] !== r.sha256) problems.push(`Piece ${i + 1} is different from the one this review is about.`);
+    else if (utf16Length(g.text) !== r.chars) problems.push(`Piece ${i + 1}'s length in the receipt (chars) is wrong.`);
+    if ((g.name ?? "") !== r.name) problems.push(`Piece ${i + 1}'s name differs from the one in the receipt (names are part of pieces_sha256).`);
+  });
 }
 
 /**
@@ -739,18 +796,24 @@ export async function verifyReviewOutcome(receipt, opts = {}) {
   const problems = [];
   const trusts = ["Each reviewer's verdict is that AI model's judgment: auditable (model, prompt fingerprint), not recomputable, and not a guarantee the output is correct."];
   if (p?.type !== "review") return { ok: false, problems: ["Not a sealed-review receipt."], trusts };
-  const fp = formatProblem(p);
+  const fp = formatProblem(p, "review");
   if (fp) return { ok: false, problems: [fp], trusts };
-  if (!["review", "review-3"].includes(p.tier))
+  const multi = p.receipt_format === MULTI_FORMAT;
+  if (multi ? !(typeof p.tier === "string" && p.tier in MULTI_PIECES) : !["review", "review-3"].includes(p.tier)) {
+    if (multi) return { ok: false, problems: [`A ${MULTI_FORMAT} receipt must be for a multi-part tier (review-3x2 or review-3x3), not ${String(p.tier).slice(0, 40)}.`], trusts };
+    if (typeof p.tier === "string" && p.tier in MULTI_PIECES) return { ok: false, problems: [`A ${p.tier} receipt must say receipt_format ${MULTI_FORMAT}; this one doesn't, so it can't be checked.`], trusts };
     return { ok: false, problems: [`This client doesn't know the ${String(p.tier).slice(0, 40)} review tier, so nothing was confirmed. Update the client (npm install agent-referee-client@latest).`], trusts };
+  }
   if (opts.tier && p.tier !== opts.tier) problems.push(`This review is ${p.tier}, not ${opts.tier}.`);
-  if (opts.output !== undefined && (await sha256Hex(opts.output)) !== p.output_sha256) problems.push("This review is about a different output than the one you have.");
+  if (multi) await checkPieces(p, opts, problems);
+  else if (opts.pieces !== undefined) problems.push("This is a single-piece review: check it with output, not pieces.");
+  if (!multi && opts.output !== undefined && (await sha256Hex(opts.output)) !== p.output_sha256) problems.push("This review is about a different output than the one you have.");
   if (opts.task !== undefined && (await sha256Hex(opts.task)) !== p.task_sha256) problems.push("This review is for a different task than the one you have.");
   const models = p.reviewers?.models ?? [];
   const pp = panelProblem(opts.panel, models, p.reviewers?.panel_selection);
   if (pp) problems.push(`The reviewers differ from what you asked for: ${pp}.`);
   const votes = p.votes ?? [];
-  const size = { review: 1, "review-3": 3 }[p.tier];
+  const size = { review: 1, "review-3": 3, "review-3x2": 3, "review-3x3": 3 }[p.tier];
   if (!size || models.length !== size || votes.length !== size) problems.push(`Expected ${size ?? "?"} reviewer votes, the receipt has ${votes.length}.`);
   votes.forEach((v, i) => {
     if (v.model !== models[i]) problems.push(`Vote ${i + 1} doesn't come from the committed reviewer (${models[i]}).`);
@@ -762,6 +825,13 @@ export async function verifyReviewOutcome(receipt, opts = {}) {
   });
   const tally = Object.fromEntries(REVIEW_VERDICTS.map((v) => [v, 0]));
   for (const v of votes) if (v.verdict in tally) tally[v.verdict]++;
+  if (multi) {
+    if (p.reviewers?.decision_rule !== "majority") problems.push("A multi-part review is decided by majority; this receipt names another rule.");
+    if (new Set(models.map((m) => companyOfModel(String(m)))).size !== models.length) problems.push("The reviewers aren't from three different AI companies.");
+    votes.forEach((v, i) => {
+      if (!Number.isInteger(v?.issues_dropped) || v.issues_dropped < 0) problems.push(`Vote ${i + 1} is missing issues_dropped (always present in a multi-part receipt).`);
+    });
+  }
   let verdict;
   if (p.reviewers?.decision_rule === "single") verdict = votes[0]?.verdict;
   else if (p.reviewers?.decision_rule === "majority") verdict = REVIEW_VERDICTS.find((v) => tally[v] > votes.length / 2) ?? "split";
@@ -797,7 +867,7 @@ export async function verifyOutcome(receipt, opts = {}) {
   const problems = [];
   const trusts = [];
   if (!p?.tier || !p?.outcome) return { ok: false, recomputed: false, problems: ["Not a receipt payload."], trusts };
-  const fp = formatProblem(p);
+  const fp = formatProblem(p, "match");
   if (fp) return { ok: false, recomputed: false, problems: [fp], trusts, evidence: [] };
   const out = p.outcome;
   const proof = p.proof ?? {};
@@ -909,7 +979,7 @@ export async function verifySeries(receipts) {
   const ps = (receipts ?? []).map((r) => r?.payload ?? r).filter(Boolean);
   const problems = [];
   if (!ps.length) return { ok: false, problems: ["No receipts given."], tally: null };
-  const fp = ps.map(formatProblem).find(Boolean);
+  const fp = ps.map((x) => formatProblem(x, "match")).find(Boolean);
   if (fp) return { ok: false, problems: [fp], tally: null };
   const gameOf = (p) => p.series?.game ?? 1;
   ps.sort((a, b) => gameOf(a) - gameOf(b));

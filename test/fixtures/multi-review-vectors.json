@@ -1,0 +1,1947 @@
+{
+  "generated_by": "agent-referee-server scripts/gen-multi-vectors.mjs",
+  "receipt_format": "review-multi-v1",
+  "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E=",
+  "notes": [
+    "Verify the signature (Ed25519 over canonical JSON of payload) against public_key.",
+    "Then: receipt_format must be known; tier review-3x2 (2 pieces) or review-3x3 (3 pieces); no output_sha256; exactly 3 votes from 3 companies, each with an integer issues_dropped; pieces_sha256 = sha256 hex of canonical JSON of pieces; each given piece's sha256 (UTF-8), chars (UTF-16 code units) and name ('' when none) match in order; task_sha256 matches; the 2-of-3 verdict and tally recompute.",
+    "Each case's expect.reason is a hint for test names, not text a client must print."
+  ],
+  "building_blocks": [
+    {
+      "pieces": [
+        {
+          "name": "Server",
+          "text": "What's live: version 996005f8.\n"
+        },
+        {
+          "text": "Open items: the multi-part tiers."
+        }
+      ],
+      "records": [
+        {
+          "index": 1,
+          "name": "Server",
+          "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+          "chars": 31
+        },
+        {
+          "index": 2,
+          "name": "",
+          "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+          "chars": 33
+        }
+      ],
+      "canonical": "[{\"chars\":31,\"index\":1,\"name\":\"Server\",\"sha256\":\"6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117\"},{\"chars\":33,\"index\":2,\"name\":\"\",\"sha256\":\"088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0\"}]",
+      "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d"
+    },
+    {
+      "pieces": [
+        {
+          "name": "Part 1 — 日本語 ✓",
+          "text": "漢字とemoji 😀 count as UTF-16 code units: 😀 is 2."
+        },
+        {
+          "text": "Line endings stay exactly as sent:\r\nCRLF, and a trailing space "
+        },
+        {
+          "name": "Docs",
+          "text": "  separators and \"quotes\" and \\ backslashes."
+        }
+      ],
+      "records": [
+        {
+          "index": 1,
+          "name": "Part 1 — 日本語 ✓",
+          "sha256": "af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c",
+          "chars": 48
+        },
+        {
+          "index": 2,
+          "name": "",
+          "sha256": "4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469",
+          "chars": 63
+        },
+        {
+          "index": 3,
+          "name": "Docs",
+          "sha256": "72e4db099d333fa3048aa18da48900d2317a50da98b5ffc679a50cad17172694",
+          "chars": 44
+        }
+      ],
+      "canonical": "[{\"chars\":48,\"index\":1,\"name\":\"Part 1 — 日本語 ✓\",\"sha256\":\"af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c\"},{\"chars\":63,\"index\":2,\"name\":\"\",\"sha256\":\"4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469\"},{\"chars\":44,\"index\":3,\"name\":\"Docs\",\"sha256\":\"72e4db099d333fa3048aa18da48900d2317a50da98b5ffc679a50cad17172694\"}]",
+      "pieces_sha256": "b6fd77cd6ee02a6b1c08dd998cb45d5797c05442ad9f81eecbec358d17f831e1"
+    }
+  ],
+  "cases": [
+    {
+      "id": "valid-3x2",
+      "what": "A valid 2-piece receipt, one piece named.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HsXnKAZQ6vQwFpMCUTZlLt45qmLgRRJtyeeIk6bae/YYeaZMkgTbFresr/7ucb2vTpOUJRfhKuVbleAamvRQCQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": true,
+        "verdict": "pass"
+      }
+    },
+    {
+      "id": "valid-3x3-unicode",
+      "what": "A valid 3-piece receipt with CJK, emoji, CRLF, U+2028 and escapes; the verdict is split.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Part 1 — 日本語 ✓",
+            "text": "漢字とemoji 😀 count as UTF-16 code units: 😀 is 2."
+          },
+          {
+            "text": "Line endings stay exactly as sent:\r\nCRLF, and a trailing space "
+          },
+          {
+            "name": "Docs",
+            "text": "  separators and \"quotes\" and \\ backslashes."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x3",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Part 1 — 日本語 ✓",
+              "sha256": "af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c",
+              "chars": 48
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469",
+              "chars": 63
+            },
+            {
+              "index": 3,
+              "name": "Docs",
+              "sha256": "72e4db099d333fa3048aa18da48900d2317a50da98b5ffc679a50cad17172694",
+              "chars": 44
+            }
+          ],
+          "pieces_sha256": "b6fd77cd6ee02a6b1c08dd998cb45d5797c05442ad9f81eecbec358d17f831e1",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 1",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "fail",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "split",
+            "tally": {
+              "pass": 1,
+              "needs_changes": 1,
+              "fail": 1,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "lC8ZM3jGwtf6srE4V9uBtuEN1CINnJpGhEVXiLlyr1mN40fbyjZDdPh3m9P/GBwHFWok0pFbCb/NbJ8ygTqfBA==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": true,
+        "verdict": "split"
+      }
+    },
+    {
+      "id": "wrong-piece-text",
+      "what": "The verifier holds a different text for piece 2.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers.!"
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HsXnKAZQ6vQwFpMCUTZlLt45qmLgRRJtyeeIk6bae/YYeaZMkgTbFresr/7ucb2vTpOUJRfhKuVbleAamvRQCQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "piece 2 sha256 differs"
+      }
+    },
+    {
+      "id": "missing-name",
+      "what": "The verifier forgot piece 1's name: names are part of pieces_sha256.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HsXnKAZQ6vQwFpMCUTZlLt45qmLgRRJtyeeIk6bae/YYeaZMkgTbFresr/7ucb2vTpOUJRfhKuVbleAamvRQCQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "piece 1 name differs"
+      }
+    },
+    {
+      "id": "pieces-swapped",
+      "what": "The right pieces in the wrong order.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "text": "Open items: the multi-part tiers."
+          },
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HsXnKAZQ6vQwFpMCUTZlLt45qmLgRRJtyeeIk6bae/YYeaZMkgTbFresr/7ucb2vTpOUJRfhKuVbleAamvRQCQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "piece order differs"
+      }
+    },
+    {
+      "id": "wrong-task",
+      "what": "A different task.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed. ",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HsXnKAZQ6vQwFpMCUTZlLt45qmLgRRJtyeeIk6bae/YYeaZMkgTbFresr/7ucb2vTpOUJRfhKuVbleAamvRQCQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "task_sha256 differs"
+      }
+    },
+    {
+      "id": "wrong-count",
+      "what": "Three pieces given for a 2-piece receipt.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          },
+          {
+            "text": "extra"
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HsXnKAZQ6vQwFpMCUTZlLt45qmLgRRJtyeeIk6bae/YYeaZMkgTbFresr/7ucb2vTpOUJRfhKuVbleAamvRQCQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "piece count differs from the tier"
+      }
+    },
+    {
+      "id": "bad-pieces-sha256",
+      "what": "Signed, but pieces_sha256 isn't the hash of the canonical pieces list.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "Bzwub5GT34KG8Sz8KJa4W4lCs5OCgrp/rUFh+0JlRUNpfpb1hUZv95FQgcHPWnqyVvPeLhJLxF8VEC2CTxq7Ag==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "pieces_sha256 doesn't match pieces"
+      }
+    },
+    {
+      "id": "chars-as-code-points",
+      "what": "Signed and self-consistent, but chars counts code points instead of UTF-16 units.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Part 1 — 日本語 ✓",
+            "text": "漢字とemoji 😀 count as UTF-16 code units: 😀 is 2."
+          },
+          {
+            "text": "Line endings stay exactly as sent:\r\nCRLF, and a trailing space "
+          },
+          {
+            "name": "Docs",
+            "text": "  separators and \"quotes\" and \\ backslashes."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x3",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Part 1 — 日本語 ✓",
+              "sha256": "af437c6d533cce2260b27641b315abb72c7be5a1f2122d6b1dcc010d4bbb290c",
+              "chars": 46
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "4432b0b51b26b1bea2d624893dbc02f70c8348946c6720c2d51b0cebc8046469",
+              "chars": 63
+            },
+            {
+              "index": 3,
+              "name": "Docs",
+              "sha256": "72e4db099d333fa3048aa18da48900d2317a50da98b5ffc679a50cad17172694",
+              "chars": 44
+            }
+          ],
+          "pieces_sha256": "7135d58a556a494cd4f41e1c42e5faa4ba8d93a9da86440cedbed0345e88c5c3",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 1",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "fail",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "split",
+            "tally": {
+              "pass": 1,
+              "needs_changes": 1,
+              "fail": 1,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "Qu9UTLDFk0cifPPyerxZrPf5lmoBsAriBv6VD5wJtPBs/BvG48Sgr4joX5XI5EpAs+W701FHnj2KMSvgVP60Aw==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "piece 1 chars differs"
+      }
+    },
+    {
+      "id": "bad-verdict",
+      "what": "Signed, but the verdict doesn't follow from the votes.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "needs_changes",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "ihObEyghS2By389XVLHhwvsXvyVyUzqjESEXauYYaxXPVDo8AMC5WVQNd9Um+e9S3E2ianyjzwPhSyDZl/lxAg==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "verdict doesn't recompute"
+      }
+    },
+    {
+      "id": "two-votes",
+      "what": "Signed, but only 2 votes on a 3-reviewer tier.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "Vfwys4TUNoi+qJrMHCNgZQcBpdK0T6SeK1TAYa2O5B+hbs8EMNSYh1GghaunbNIovHmxP9RcqR7ZPWQ9cMVuBw==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "expected 3 votes"
+      }
+    },
+    {
+      "id": "same-company",
+      "what": "Signed, but two reviewers from one company.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "claude-sonnet-5-5",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "claude-sonnet-5-5",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "/kfG2K0xv67raJeBe/ZAPF16EcKeLynOfs2oYLH3nMLMoV5xiAsrCddoDBFXRDcTWd84cv35C9P4LLusxoIMCA==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "reviewers not from three companies"
+      }
+    },
+    {
+      "id": "no-issues-dropped",
+      "what": "Signed, but votes lack issues_dropped (always present in this format).",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning."
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning."
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning."
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "W93ECkFJu4DEP1R8OErkeV1OraH3+Y5r765uxb5GBKE3nMHd/pzK7ygJD8cQdwJaSNuISH72hbxNvSOmLn72Aw==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "issues_dropped missing"
+      }
+    },
+    {
+      "id": "has-output-sha256",
+      "what": "Signed, but it also carries output_sha256, which this format never has.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict.",
+          "output_sha256": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
+        },
+        "signature": "FUeYyRT3UrY2tSNqGRfaoQfx6PumVuetBKDkaVWRz4S2A4RJR+aNrHvso7+er2pjyEeGzkoZyhGRXM5XjCGICg==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "unexpected output_sha256"
+      }
+    },
+    {
+      "id": "unknown-format",
+      "what": "A receipt_format the client doesn't know: refuse and ask to update the client.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v2",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HbQno8DYtlaaQo20Fs+ant+PbJJHLQX7VGc7TuaKRNWgwF08XBUaCRpx6MyIl8/hfkJqbyvfJAi4tM60HjE1BQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "unknown receipt_format"
+      }
+    },
+    {
+      "id": "old-tier-name",
+      "what": "receipt_format review-multi-v1 but tier review-3.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "pass",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "jjtidYki8ONPgznzZ+WCISi/zBnP0D+OV9NEI6vwIAmgt9NBu1BSNhksh/TEue1fV0CTQWCUpePaAVgobsZzBQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "tier isn't a multi-part tier"
+      }
+    },
+    {
+      "id": "bad-signature",
+      "what": "The payload was changed after signing.",
+      "given": {
+        "task": "Review the handoff: every fact must match the code, and every open item must be listed.",
+        "pieces": [
+          {
+            "name": "Server",
+            "text": "What's live: version 996005f8.\n"
+          },
+          {
+            "text": "Open items: the multi-part tiers."
+          }
+        ]
+      },
+      "receipt": {
+        "payload": {
+          "type": "review",
+          "service": "Agent Referee",
+          "receipt_format": "review-multi-v1",
+          "review_id": "a1b2c3d4e5f6a1b2c3d4e5f6",
+          "tier": "review-3x2",
+          "created_at": "2026-10-28T22:00:00.000Z",
+          "network": "base",
+          "payer": "0x28275fa8fe39996501e160104a23e1af5e005f58",
+          "title": "Handoff v5",
+          "task_sha256": "7a4f37922fe2e2e74cd88f73feb73f121d9558657ccacf48de314aa0d9834324",
+          "pieces": [
+            {
+              "index": 1,
+              "name": "Server",
+              "sha256": "6f3d0b4195bd6187f47203f06be1679c60efe8f076d8532e758ee7fa09896117",
+              "chars": 31
+            },
+            {
+              "index": 2,
+              "name": "",
+              "sha256": "088af9afbab419ea872aee30998fd9e0b6ac2e7b433fd1c1db2c4279a4d83de0",
+              "chars": 33
+            }
+          ],
+          "pieces_sha256": "bd6a4223fb4fc88a649d05952322dd22a59f82fa18d73a96afe8dffea4b81e0d",
+          "reviewers": {
+            "panel_selection": {
+              "mode": "custom"
+            },
+            "models": [
+              "claude-opus-5-5",
+              "openai/gpt-6-luna",
+              "google/gemini-4-argon"
+            ],
+            "temperature": null,
+            "format_version": "agent-referee-review-v4-multi",
+            "prompt_sha256": "622ca462ecb0cf966f8a5abc1fe47b58cdd7c123f2b18233bc65e5c3061e122d",
+            "decision_rule": "majority"
+          },
+          "votes": [
+            {
+              "reviewer": 1,
+              "model": "claude-opus-5-5",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 3
+            },
+            {
+              "reviewer": 2,
+              "model": "openai/gpt-6-luna",
+              "verdict": "needs_changes",
+              "confidence": "high",
+              "issues": [
+                "[piece 1] problem from reviewer 2",
+                "[all] a problem across pieces"
+              ],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            },
+            {
+              "reviewer": 3,
+              "model": "google/gemini-4-argon",
+              "verdict": "pass",
+              "confidence": "high",
+              "issues": [],
+              "reasoning": "Short reasoning.",
+              "issues_dropped": 0
+            }
+          ],
+          "result": {
+            "verdict": "fail",
+            "tally": {
+              "pass": 2,
+              "needs_changes": 1,
+              "fail": 0,
+              "cannot_assess": 0
+            },
+            "unanimous": false
+          },
+          "note": "A review records what these AI models said about this exact task and these exact pieces, all chosen by the agent that paid. Each reviewer read every piece in one call. It is not a guarantee the work is correct. Reviewers saw only the text (no tools, web or code execution), and a review is one sample: running it again can give a different verdict."
+        },
+        "signature": "HsXnKAZQ6vQwFpMCUTZlLt45qmLgRRJtyeeIk6bae/YYeaZMkgTbFresr/7ucb2vTpOUJRfhKuVbleAamvRQCQ==",
+        "algorithm": "Ed25519",
+        "public_key": "oXaNPal6Z3/eJhLo7zd2aYZGnWW91vqUgfkCt50H85E="
+      },
+      "expect": {
+        "ok": false,
+        "reason": "signature"
+      }
+    }
+  ]
+}

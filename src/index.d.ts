@@ -271,7 +271,10 @@ export interface AgentRefereeOptions {
  * third is drawn from a company neither picked. Every panel uses different AI companies.
  */
 export type PanelChoice = "rotate" | string[] | string[][] | { picks: Record<string, string> };
-export type ReviewTier = "review" | "review-3";
+export type ReviewTier = "review" | "review-3" | "review-3x2" | "review-3x3";
+/** One piece of a multi-part review (review-3x2: 2 pieces, review-3x3: 3). Up to 12,000 characters each, 36,000 in
+ * all. The name is optional; it's part of the receipt (recorded as "" when left out), so keep it with the text. */
+export interface ReviewPiece { name?: string; text: string }
 export type ReviewVerdict = "pass" | "needs_changes" | "fail" | "cannot_assess";
 export interface ReviewVote {
   reviewer: number;
@@ -282,6 +285,8 @@ export interface ReviewVote {
   reasoning: string;
   scores?: Record<string, number>;
   total?: number;
+  /** Multi-part reviews only: how many issues past the cap (10 for 2 pieces, 15 for 3) the reviewer's answer had. */
+  issues_dropped?: number;
 }
 export interface ReviewResult { verdict: ReviewVerdict | "split"; tally: Record<ReviewVerdict, number>; unanimous: boolean }
 export interface ReviewCheck { ok: boolean; problems: string[]; trusts: string[] }
@@ -313,9 +318,11 @@ export class AgentReferee {
   waitFor(matchId: string, fn: (st: MatchStatus) => boolean): Promise<MatchStatus>;
   /** Checks the signature of a receipt or a step acknowledgment. Pass publicKeys to verify offline. */
   verifyReceipt(receipt: Receipt | StepAck, opts?: { publicKeys?: string[] }): Promise<boolean>;
-  /** Sealed review: one agent's output checked by 1 or 3 independent AI reviewers, with a signed receipt. */
-  review(opts: { tier?: ReviewTier; task: string; output: string; title?: string; criteria?: Criterion[]; panel?: PanelChoice }): Promise<ReviewResponse>;
-  verifyReview(receipt: Receipt, opts?: { task?: string; output?: string; tier?: ReviewTier; panel?: PanelChoice; publicKeys?: string[] }): Promise<ReviewCheck>;
+  /** Sealed review: one agent's output checked by 1 or 3 independent AI reviewers, with a signed receipt.
+   * review-3x2 and review-3x3 take the work as `pieces` instead of `output`: three reviewers each read every piece. */
+  review(opts: { tier?: "review" | "review-3"; task: string; output: string; title?: string; criteria?: Criterion[]; panel?: PanelChoice }): Promise<ReviewResponse>;
+  review(opts: { tier: "review-3x2" | "review-3x3"; task: string; pieces: ReviewPiece[]; title?: string; criteria?: Criterion[]; panel?: PanelChoice }): Promise<ReviewResponse>;
+  verifyReview(receipt: Receipt, opts?: { task?: string; output?: string; pieces?: ReviewPiece[]; tier?: ReviewTier; panel?: PanelChoice; publicKeys?: string[] }): Promise<ReviewCheck>;
 }
 
 export class Seat {
@@ -351,7 +358,7 @@ export function verifyOutcome(receipt: Receipt | Receipt["payload"], opts?: { se
 /** Check a rematch series from its receipts: hash links, game order and every running tally. Verify signatures separately. */
 export function verifySeries(receipts: (Receipt | Receipt["payload"])[]): Promise<{ ok: boolean; problems: string[]; tally: Tally | null }>;
 /** Standalone, offline signature check for a receipt or step acknowledgment. */
-export function verifyReviewOutcome(receipt: Receipt | Receipt["payload"], opts?: { task?: string; output?: string; tier?: ReviewTier; panel?: PanelChoice }): Promise<ReviewCheck>;
+export function verifyReviewOutcome(receipt: Receipt | Receipt["payload"], opts?: { task?: string; output?: string; pieces?: ReviewPiece[]; tier?: ReviewTier; panel?: PanelChoice }): Promise<ReviewCheck>;
 export function verifySignature(doc: Receipt | StepAck, publicKeys: string[]): Promise<boolean>;
 /** Every acknowledgment the receipt contradicts. No secrets needed, so anyone can run it. */
 export function findContradictions(receipt: Receipt | Receipt["payload"], acks: StepAck[]): Contradiction[];
