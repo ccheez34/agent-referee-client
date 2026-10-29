@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.10.0 (unreleased)
+## 0.10.0 (2026-10-29)
 
 - **Multi-part judge matches (`judge-3x2`, `judge-3x3`).** `seat.submit([text1, text2])` sends a side's case as 2
   or 3 pieces (strings, or `{ text }`). A wrong number of pieces, an empty piece, or a single position on these tiers
