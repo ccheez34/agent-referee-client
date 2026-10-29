@@ -107,3 +107,21 @@ test("review(): multi-part tiers send pieces, never output, and check the answer
   ]) await assert.rejects(ref.review(bad), /Nothing was sent/);
   assert.equal(sent.length, 1);
 });
+
+test("odd receipts are refused without throwing: a null piece record, a built-in name as tier, a free or wrongly unanimous one", async () => {
+  const c = vx.cases.find((x) => x.id === "valid-3x2");
+  const p = c.receipt.payload;
+  const nullRec = await verifyReviewOutcome({ ...p, pieces: [p.pieces[0], null] }, { task: c.given.task, pieces: c.given.pieces });
+  assert.equal(nullRec.ok, false);
+  assert.ok(nullRec.problems.includes("Piece 2's record in the receipt is malformed."), JSON.stringify(nullRec.problems));
+  for (const tier of ["constructor", "toString", "__proto__"]) {
+    const r = await verifyReviewOutcome({ ...p, tier });
+    assert.deepEqual(r.problems, [`A review-multi-v1 receipt must be for a multi-part tier (review-3x2 or review-3x3), not ${tier}.`]);
+  }
+  const free = await verifyReviewOutcome({ ...p, funding: "free" }, { task: c.given.task, pieces: c.given.pieces });
+  assert.ok(free.problems.includes("Multi-part reviews are paid only, but this receipt says it was free."));
+  const unan = await verifyReviewOutcome({ ...p, result: { ...p.result, unanimous: true } }, { task: c.given.task, pieces: c.given.pieces });
+  assert.ok(unan.problems.includes("The receipt's unanimous flag doesn't match the votes."));
+  const nulls = await verifyReviewOutcome(c.receipt, { task: c.given.task, output: null, pieces: null }); // null means not given
+  assert.equal(nulls.ok, true, JSON.stringify(nulls.problems));
+});

@@ -19,6 +19,7 @@ const REVIEW_TIERS = ["review", "review-3", "review-3x2", "review-3x3"];
 /** Multi-part review tiers: how many pieces each takes. Three reviewers from three companies each read every piece. */
 const MULTI_PIECES = { "review-3x2": 2, "review-3x3": 3 };
 const MULTI_FORMAT = "review-multi-v1";
+const isMultiTier = (t) => typeof t === "string" && Object.hasOwn(MULTI_PIECES, t);
 const REVIEW_VERDICTS = ["pass", "needs_changes", "fail", "cannot_assess"];
 
 export class RefereeError extends Error {
@@ -752,7 +753,7 @@ const utf16Length = (s) => s.length; // JS strings are UTF-16: .length counts co
 async function checkPieces(p, opts, problems) {
   const n = MULTI_PIECES[p.tier];
   if ("output_sha256" in p) problems.push("A multi-part receipt never has output_sha256; this one does.");
-  if (opts.output !== undefined) problems.push("This is a multi-part review: check it with pieces, not output.");
+  if (opts.output != null) problems.push("This is a multi-part review: check it with pieces, not output.");
   const recs = p.pieces;
   if (!Array.isArray(recs) || recs.length !== n) {
     problems.push(`A ${p.tier} receipt lists ${n} pieces; this one lists ${Array.isArray(recs) ? recs.length : "none"}.`);
@@ -764,20 +765,20 @@ async function checkPieces(p, opts, problems) {
   });
   if ((await sha256Hex(canonicalJson(recs))) !== p.pieces_sha256) problems.push("pieces_sha256 doesn't match the receipt's list of pieces.");
   const given = opts.pieces;
-  if (given === undefined) return;
+  if (given == null) return;
   if (!Array.isArray(given) || given.length !== n) {
-    problems.push(`This review has ${n} pieces; you passed ${Array.isArray(given) ? given.length : "something that isn't a list"}.`);
+    problems.push(`This review has ${n} pieces; you passed ${Array.isArray(given) ? given.length : "something that is not a list"}.`);
     return;
   }
   // The right pieces in the wrong order: say so, rather than listing every piece as different.
   const hashes = await Promise.all(given.map((g) => (typeof g?.text === "string" ? sha256Hex(g.text) : null)));
-  const sameSet = hashes.every((h) => h !== null) && [...hashes].sort().join() === recs.map((r) => r.sha256).sort().join();
-  if (sameSet && hashes.some((h, i) => h !== recs[i].sha256)) {
+  const sameSet = hashes.every((h) => h !== null) && [...hashes].sort().join() === recs.map((r) => r?.sha256).sort().join();
+  if (sameSet && hashes.some((h, i) => h !== recs[i]?.sha256)) {
     problems.push("These are the review's pieces, but in a different order.");
     return;
   }
   given.forEach((g, i) => {
-    const r = recs[i];
+    const r = recs[i] ?? {};
     if (typeof g?.text !== "string") return problems.push(`Piece ${i + 1} you passed has no text.`);
     if (hashes[i] !== r.sha256) problems.push(`Piece ${i + 1} is different from the one this review is about.`);
     else if (utf16Length(g.text) !== r.chars) problems.push(`Piece ${i + 1}'s length in the receipt (chars) is wrong.`);
@@ -799,14 +800,14 @@ export async function verifyReviewOutcome(receipt, opts = {}) {
   const fp = formatProblem(p, "review");
   if (fp) return { ok: false, problems: [fp], trusts };
   const multi = p.receipt_format === MULTI_FORMAT;
-  if (multi ? !(typeof p.tier === "string" && p.tier in MULTI_PIECES) : !["review", "review-3"].includes(p.tier)) {
+  if (multi ? !isMultiTier(p.tier) : !["review", "review-3"].includes(p.tier)) {
     if (multi) return { ok: false, problems: [`A ${MULTI_FORMAT} receipt must be for a multi-part tier (review-3x2 or review-3x3), not ${String(p.tier).slice(0, 40)}.`], trusts };
-    if (typeof p.tier === "string" && p.tier in MULTI_PIECES) return { ok: false, problems: [`A ${p.tier} receipt must say receipt_format ${MULTI_FORMAT}; this one doesn't, so it can't be checked.`], trusts };
+    if (isMultiTier(p.tier)) return { ok: false, problems: [`A ${p.tier} receipt must say receipt_format ${MULTI_FORMAT}; this one doesn't, so it can't be checked.`], trusts };
     return { ok: false, problems: [`This client doesn't know the ${String(p.tier).slice(0, 40)} review tier, so nothing was confirmed. Update the client (npm install agent-referee-client@latest).`], trusts };
   }
   if (opts.tier && p.tier !== opts.tier) problems.push(`This review is ${p.tier}, not ${opts.tier}.`);
   if (multi) await checkPieces(p, opts, problems);
-  else if (opts.pieces !== undefined) problems.push("This is a single-piece review: check it with output, not pieces.");
+  else if (opts.pieces != null) problems.push("This is a single-piece review: check it with output, not pieces.");
   if (!multi && opts.output !== undefined && (await sha256Hex(opts.output)) !== p.output_sha256) problems.push("This review is about a different output than the one you have.");
   if (opts.task !== undefined && (await sha256Hex(opts.task)) !== p.task_sha256) problems.push("This review is for a different task than the one you have.");
   const models = p.reviewers?.models ?? [];
@@ -831,6 +832,8 @@ export async function verifyReviewOutcome(receipt, opts = {}) {
     votes.forEach((v, i) => {
       if (!Number.isInteger(v?.issues_dropped) || v.issues_dropped < 0) problems.push(`Vote ${i + 1} is missing issues_dropped (always present in a multi-part receipt).`);
     });
+    if (p.funding === "free") problems.push("Multi-part reviews are paid only, but this receipt says it was free.");
+    if (votes.length && p.result?.unanimous !== votes.every((v) => v?.verdict === votes[0]?.verdict)) problems.push("The receipt's unanimous flag doesn't match the votes.");
   }
   let verdict;
   if (p.reviewers?.decision_rule === "single") verdict = votes[0]?.verdict;
