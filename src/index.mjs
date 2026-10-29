@@ -718,7 +718,8 @@ function criteriaPick(scores, criteria) {
  * The multi-part part of a judge-multi-v1 check: the judges' instruction version, no submission_sha256, each side's
  * piece records ({index, sha256, chars}, chars in UTF-16 code units) and their pieces_sha256, both sides' pieces in a
  * judged match (only the submitting side's in a forfeit), three judges from three companies, and (when you pass a
- * side's pieces, or check with your seat) that side's count, order, sha256 and chars. `given` is { [seat]: texts }.
+ * side's pieces, or check with your seat) that side's count, order, sha256 and chars. `given` is a list of
+ * [seat, texts] pairs: the pieces you passed, plus your seat's own (both are checked, neither replaces the other).
  */
 async function checkJudgePieces(p, given, problems) {
   const n = JUDGE_MULTI_PIECES[p.tier];
@@ -727,8 +728,8 @@ async function checkJudgePieces(p, given, problems) {
   const judge = proof.judge ?? {};
   if ("submission_sha256" in proof) problems.push("A multi-part judge receipt never has proof.submission_sha256; this one does.");
   if (judge.format_version !== JUDGE_MULTI_FORMAT_VERSION) problems.push(`The judges' instructions should be ${JUDGE_MULTI_FORMAT_VERSION}; this receipt says ${String(judge.format_version).slice(0, 60)}.`);
-  const parties = [...(p.parties ?? [])].sort();
-  const forfeited = out.forfeited ?? [];
+  const parties = (Array.isArray(p.parties) ? p.parties : []).filter((x) => typeof x === "string").sort();
+  const forfeited = Array.isArray(out.forfeited) ? out.forfeited : [];
   const expectSides = out.by_forfeit ? parties.filter((s) => !forfeited.includes(s)) : parties;
   const pieces = proof.pieces && typeof proof.pieces === "object" && !Array.isArray(proof.pieces) ? proof.pieces : {};
   const hashes = proof.pieces_sha256 && typeof proof.pieces_sha256 === "object" && !Array.isArray(proof.pieces_sha256) ? proof.pieces_sha256 : {};
@@ -736,6 +737,14 @@ async function checkJudgePieces(p, given, problems) {
   if (canonicalJson(sides) !== canonicalJson(expectSides))
     problems.push(out.by_forfeit ? "A forfeit receipt must show the pieces of the side that submitted, and only those." : "A judged receipt must have both sides' pieces.");
   if (canonicalJson(Object.keys(hashes).sort()) !== canonicalJson(sides)) problems.push("pieces_sha256 must name exactly the sides that have pieces.");
+  if (out.by_forfeit) {
+    // The service only signs a forfeit for a two-party match where one side submitted: that side wins, and the
+    // other is listed as forfeiting. The pieces show who submitted, so the winner and the forfeit list must match.
+    const submitted = sides.length === 1 ? sides[0] : null;
+    const others = parties.filter((s) => s !== submitted);
+    if (!submitted || out.winner !== submitted || canonicalJson([...forfeited].sort()) !== canonicalJson(others))
+      problems.push("In a forfeit, the side that submitted must be the winner, and only the other side may be listed as forfeiting.");
+  }
   for (const side of sides) {
     const recs = pieces[side];
     if (!Array.isArray(recs) || recs.length !== n) {
@@ -743,7 +752,7 @@ async function checkJudgePieces(p, given, problems) {
       continue;
     }
     recs.forEach((r, i) => {
-      const ok = r && typeof r === "object" && r.index === i + 1 && typeof r.sha256 === "string" && /^[0-9a-f]{64}$/.test(r.sha256) && Number.isInteger(r.chars) && r.chars > 0;
+      const ok = r && typeof r === "object" && !Array.isArray(r) && canonicalJson(Object.keys(r).sort()) === '["chars","index","sha256"]' && r.index === i + 1 && typeof r.sha256 === "string" && /^[0-9a-f]{64}$/.test(r.sha256) && Number.isInteger(r.chars) && r.chars > 0;
       if (!ok) problems.push(`${side}'s piece ${i + 1} record in the receipt is malformed.`);
     });
     if ((await sha256Hex(canonicalJson(recs))) !== hashes[side]) problems.push(`${side}'s pieces_sha256 doesn't match its list of pieces.`);
@@ -752,9 +761,8 @@ async function checkJudgePieces(p, given, problems) {
     const models = (judge.panel ?? []).map((x) => String(x?.model));
     if (models.length !== 3 || new Set(models.map(companyOfModel)).size !== 3) problems.push("The judges aren't three, from three different AI companies.");
   }
-  if (given == null) return;
-  for (const [side, texts0] of Object.entries(given)) {
-    const recs = pieces[side];
+  for (const [side, texts0] of given) {
+    const recs = Object.hasOwn(pieces, side) ? pieces[side] : undefined;
     const texts = Array.isArray(texts0) ? texts0.map((x) => (typeof x === "string" ? x : x?.text)) : null;
     if (!Array.isArray(recs)) { problems.push(`The receipt has no pieces for ${side}.`); continue; }
     if (!texts || texts.length !== n) { problems.push(`${side} has ${n} pieces on ${p.tier}; you passed ${Array.isArray(texts) ? texts.length : "something that is not a list"}.`); continue; }
@@ -995,10 +1003,18 @@ export async function verifyOutcome(receipt, opts = {}) {
     return BigInt("0x" + hex.slice(0, 16));
   };
   if (out.by_forfeit || out.forfeited?.length)
-    trusts.push(`That ${(out.forfeited ?? []).join(", ")} missed a deadline is the service's record; it can't be recomputed from the receipt.`);
+    trusts.push(`That ${(Array.isArray(out.forfeited) ? out.forfeited : []).join(", ")} missed a deadline is the service's record; it can't be recomputed from the receipt.`);
 
   if (JUDGE_TIERS.includes(p.tier)) {
-    if (multiJudge) await checkJudgePieces(p, opts.pieces ?? (me?.pieces ? { [me.seat]: me.pieces } : undefined), problems);
+    if (multiJudge) {
+      const given = [];
+      if (opts.pieces != null) {
+        if (typeof opts.pieces !== "object" || Array.isArray(opts.pieces)) problems.push('pieces must be by seat: { "seat": ["text 1", "text 2"] }.');
+        else given.push(...Object.entries(opts.pieces));
+      }
+      if (me?.pieces) given.push([me.seat, me.pieces]);
+      await checkJudgePieces(p, given, problems);
+    }
     if (!out.by_forfeit) checkJudgeDecision(p, problems, trusts);
     return done(false);
   }
@@ -1110,7 +1126,7 @@ export function findContradictions(receipt, acks = []) {
   const out = [];
   if (!p?.match_id) return out;
   const proof = p.proof ?? {};
-  const forfeited = [...(p.outcome?.forfeited ?? [])];
+  const forfeited = Array.isArray(p.outcome?.forfeited) ? [...p.outcome.forfeited] : [];
   const roundsOf = proof.rounds ?? [{ round: 1, commits: proof.commits, reveals: proof.reveals }];
   const roundFor = (n) => roundsOf.find((r) => r.round === n) ?? (roundsOf.length === 1 && !proof.rounds ? roundsOf[0] : undefined);
   for (const ack of acks) {
@@ -1132,7 +1148,7 @@ export function findContradictions(receipt, acks = []) {
       if (a.receipt_format === JUDGE_FORMAT || p.receipt_format === JUDGE_FORMAT) {
         // Multi-part judge tiers: the ack names the side's pieces; the receipt must show exactly those.
         const recs = proof.pieces?.[seat];
-        if (recs === undefined) flag(`${seat}'s accepted pieces are missing from the receipt.`);
+        if (recs == null) flag(`${seat}'s accepted pieces are missing from the receipt.`);
         else if (canonicalJson(recs) !== canonicalJson(a.pieces ?? null) || proof.pieces_sha256?.[seat] !== a.pieces_sha256) flag(`${seat}'s submission was changed.`);
       } else {
         const h = proof.submission_sha256?.[seat];

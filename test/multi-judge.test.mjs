@@ -98,3 +98,38 @@ test("submit(): multi-part judge tiers send pieces of text, refuse a wrong shape
   await assert.rejects(single.submit(["a", "b"]), /one position/);
   assert.equal(sent.length, 1);
 });
+
+test("forfeits: the side that submitted must win, and only the other side may be listed as forfeiting", async () => {
+  const c = byId("valid-forfeit");
+  const p = c.receipt.payload;
+  const msg = "In a forfeit, the side that submitted must be the winner, and only the other side may be listed as forfeiting.";
+  for (const outcome of [
+    { ...p.outcome, winner: "beta" }, // the side that forfeited wins
+    { ...p.outcome, winner: null },
+    { ...p.outcome, winner: "mallory" },
+    { ...p.outcome, forfeited: ["alpha", "beta"] },
+  ]) {
+    const r = await verifyOutcome({ ...p, outcome }, { pieces: c.given.pieces });
+    assert.equal(r.ok, false, JSON.stringify(outcome));
+    assert.ok(r.problems.includes(msg), JSON.stringify(r.problems));
+  }
+  const none = await verifyOutcome({ ...p, outcome: { ...p.outcome, forfeited: ["alpha", "beta"] }, proof: { ...p.proof, pieces: {}, pieces_sha256: {} } });
+  assert.ok(none.problems.includes(msg));
+  assert.equal((await verifyOutcome({ ...p, outcome: { ...p.outcome, forfeited: "beta" } })).ok, false); // no crash
+});
+
+test("a seat's own pieces are checked even when other pieces are passed; records must be exactly {index, sha256, chars}", async () => {
+  const c = byId("wrong-piece-text");
+  const ref = new AgentReferee({ url: "https://agentreferee.ai", publicKeys: keys });
+  const seat = new Seat(ref, c.receipt.payload.match_id, "alpha", "tok", "judge-3x2");
+  seat.pieces = c.given.pieces.alpha;
+  for (const pieces of [undefined, {}, { beta: c.given.pieces.beta }]) {
+    const r = await verifyOutcome(c.receipt, { seat, ...(pieces ? { pieces } : {}) });
+    assert.ok(r.problems.includes("alpha's piece 2 is different from the one in the receipt."), JSON.stringify(r.problems));
+  }
+  const v = structuredClone(byId("valid-3x2").receipt.payload);
+  v.proof.pieces.alpha[0].name = "alice";
+  v.proof.pieces_sha256.alpha = await sha256Hex(canonicalJson(v.proof.pieces.alpha));
+  assert.ok((await verifyOutcome(v)).problems.includes("alpha's piece 1 record in the receipt is malformed."));
+  assert.ok((await verifyOutcome(byId("valid-3x2").receipt, { pieces: [["a", "b"]] })).problems.includes('pieces must be by seat: { "seat": ["text 1", "text 2"] }.'));
+});
