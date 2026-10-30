@@ -22,3 +22,7 @@ The private half is stored only as an encrypted secret in the service's hosting 
 ### If the service shuts down
 
 Receipts stay verifiable forever: checking one needs only the public key above, which `verifySignature` and `verifyReceipt` can use offline.
+
+## Payment proofs
+
+A signed payment proof (the `X-PAYMENT` header) is sent only to the client's own url: the client never follows redirects. Under a payment wrapper, that covers the paid request when the wrapper keeps the request's options or when `captureFetch` sits under it, as in the guide's setup. Until a match ends, a proof can take over its seat (see the guide's recovery section), so keep saved proofs private.

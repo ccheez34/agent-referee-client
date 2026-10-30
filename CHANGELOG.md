@@ -2,10 +2,17 @@
 
 ## 0.10.1 (unreleased)
 
-- **The client never follows redirects.** Requests go out with `redirect: "manual"`, and a 3xx answer becomes a
-  `RefereeError` naming where it pointed. Before, fetch would follow a redirect and resend custom headers, so a paid
-  request's `X-PAYMENT` proof could reach another host. The Python client has refused redirects since 0.1.0. A payment
-  wrapper must pass the request options on to its paid request for this to cover that request too.
+- **The client never follows redirects.** Requests go out with `redirect: "manual"`, and a 3xx answer (status 0 in
+  browsers, which hide it) becomes a `RefereeError` with `body: { redirect: true, location }`. Before, fetch would follow
+  a redirect and resend custom headers, so a paid request's `X-PAYMENT` proof could reach another host.
+  - `captureFetch` forwards every request with `redirect: "manual"` too, so the paid request is covered even under a
+    payment wrapper that rebuilds the request options.
+  - If a fetch below the client follows a redirect anyway, the answer from the other address is refused.
+  - The Python client has refused redirects since 0.1.0.
+- **A saved payment proof is kept after a redirect,** as after a 5xx: only a 2xx or a 4xx says what happened to the
+  payment. Before, any status below 500 removed it.
+- **`join()` stops after one recovery attempt when a paid join is redirected,** instead of paying again up to
+  `joinRetries` times.
 
 ## 0.10.0 (2026-10-29)
 

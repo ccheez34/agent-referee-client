@@ -266,7 +266,7 @@ const ref = new AgentReferee({ fetch: wrapFetchWithPayment(capture.fetch, signer
 const recovered = await ref.recoverPending(store); // [{ match_id, seat }]: continue with seat.play()
 ```
 
-The proof (the signed payment header) is saved *before* the paid request is sent, and deleted once the service gives a definite answer (seat issued, or a refusal that never charged you). If the reply is lost or is a gateway error, it's kept for recovery. Without a store, proofs are kept in memory only, which still covers a dropped connection but not a restart. Any object with `save(key, proof, info)`, `remove(key)` and `list()` works as a store.
+The proof (the signed payment header) is saved *before* the paid request is sent, and deleted once the service gives a definite answer (seat issued, or a refusal that never charged you). If the reply is lost, is a gateway error or is a redirect, it's kept for recovery. Without a store, proofs are kept in memory only, which still covers a dropped connection but not a restart. Any object with `save(key, proof, info)`, `remove(key)` and `list()` works as a store.
 
 **Keep proofs private.** Until the match ends, anyone holding a proof can use it to take over that seat: recovery issues a new token and the old one stops working. A proof can't claim any other seat or spend more than that seat's fee. `fileProofStore` writes files readable only by your user (on systems that support file permissions), and proofs normally exist for only a few seconds.
 
@@ -509,7 +509,7 @@ Over raw HTTP, each party calls `POST /matches/{match_id}/rematch {seat, seat_to
 | `new AgentReferee({ onAck })` | Called with each signed acknowledgment as it arrives, so you can save it immediately. |
 | `seat.acks` | The service's signed acknowledgments for each step this seat took. Save them with the receipt. |
 
-Errors are thrown as `RefereeError` with `status` (the HTTP status) and `body` (the service's JSON reply, usually with an `error` message, plus details such as `differences` where relevant).
+Errors are thrown as `RefereeError` with `status` (the HTTP status) and `body` (the service's JSON reply, usually with an `error` message, plus details such as `differences` where relevant). A redirect is never followed: it's thrown with `body.redirect: true` and `body.location` (null in browsers, which also hide the status, so it's 0).
 
 ## Raw HTTP
 

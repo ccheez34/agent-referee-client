@@ -67,10 +67,13 @@ export function captureFetch(baseFetch = globalThis.fetch.bind(globalThis), opts
         if (opts.store) await opts.store.save(key, p, info); // persist first, then send
         if (opts.onPayment) await opts.onPayment(url, p, info);
       }
-      const res = await baseFetch(input, init); // if this throws (no reply), the proof stays saved for recovery
-      // A definite answer from the service (2xx: seat issued; 4xx: payment never settled) means the proof
-      // is no longer needed. 5xx can come from a gateway after the seat was already claimed, so keep it.
-      if (p && res.status < 500 && opts.store?.remove) await opts.store.remove(key).catch(() => {});
+      // Never follow a redirect, even under a payment wrapper that rebuilds the request options for its paid request.
+      // If this throws (no reply), the proof stays saved for recovery.
+      const res = await baseFetch(input, { ...init, redirect: init.redirect === "error" ? "error" : "manual" });
+      // A definite answer from the service (2xx: seat issued; 4xx: payment never settled) means the proof is no
+      // longer needed. Keep it otherwise: a 5xx can come from a gateway after the seat was already claimed, and a
+      // redirect (a 3xx, or status 0 in browsers) says nothing about what happened to the payment.
+      if (p && (res.ok || (res.status >= 400 && res.status < 500)) && opts.store?.remove) await opts.store.remove(key).catch(() => {});
       return res;
     },
     /** The proof sent with a request to `url` with this exact JSON body string. */
@@ -228,12 +231,23 @@ export class AgentReferee {
       redirect: "manual",
     });
     if (res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400)) {
-      const to = String(res.headers?.get?.("location") ?? "?").slice(0, 200);
+      // Browsers hide the status and the target of a redirect (status 0, no headers).
+      const location = res.headers?.get?.("location") ? String(res.headers.get("location")).slice(0, 200) : null;
       throw new RefereeError(
-        `The service answered with a redirect (HTTP ${res.status || "3xx"} to ${to}). The client never follows ` +
-          "redirects, so nothing (and no payment) was sent there. Check the client's url.",
+        `${this.url} answered with a redirect (${res.status ? `HTTP ${res.status}` : "status hidden by the browser"}` +
+          `${location ? ` to ${location}` : ""}). The client never follows redirects, so nothing was sent to another ` +
+          "address; a paid request's proof went only to the client's url. Check the client's url.",
         res.status,
-        {},
+        { redirect: true, location },
+      );
+    }
+    if (res.redirected) {
+      // The fetch passed in followed a redirect itself, so this answer came from another address. Don't use it.
+      throw new RefereeError(
+        `A redirect was followed below the client, to ${String(res.url).slice(0, 200)}, so this answer isn't used. ` +
+          "Make sure the fetch you passed in (or its payment wrapper) keeps the request's options, or put captureFetch under it.",
+        res.status,
+        { redirect: true, location: String(res.url).slice(0, 200) },
       );
     }
     const data = await res.json().catch(() => ({}));
@@ -313,13 +327,15 @@ export class AgentReferee {
         // payment proof right away, instead of paying again or waiting for a restart.
         const payment = this.capture?.lastPayment(this.url + path, JSON.stringify(body));
         if (!payment) throw e;
+        // A redirect won't go away by paying again: try recovering once, then stop.
+        const redirected = e instanceof RefereeError && e.body?.redirect === true;
         try {
           r = await this.recover(matchId, payment);
           break;
         } catch (re) {
           // 404: that payment never claimed a seat, so it never settled. Safe to try joining again.
           if (re instanceof RefereeError && re.status === 404) {
-            if (retries-- > 0) continue;
+            if (!redirected && retries-- > 0) continue;
             throw e; // out of retries: report why the join failed, not the recovery lookup
           }
           throw re;
