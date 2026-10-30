@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.1 (unreleased)
+
+- **The client never follows redirects.** Requests go out with `redirect: "manual"`, and a 3xx answer becomes a
+  `RefereeError` naming where it pointed. Before, fetch would follow a redirect and resend custom headers, so a paid
+  request's `X-PAYMENT` proof could reach another host. The Python client has refused redirects since 0.1.0. A payment
+  wrapper must pass the request options on to its paid request for this to cover that request too.
+
 ## 0.10.0 (2026-10-29)
 
 - **Multi-part judge matches (`judge-3x2`, `judge-3x3`).** `seat.submit([text1, text2])` sends a side's case as 2

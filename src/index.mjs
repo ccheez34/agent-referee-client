@@ -223,7 +223,19 @@ export class AgentReferee {
       method,
       headers: { "content-type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
+      // Never follow a redirect: fetch would resend custom headers, X-PAYMENT included, to wherever it points.
+      // A payment wrapper must pass these options on to its paid request for this to cover that request too.
+      redirect: "manual",
     });
+    if (res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400)) {
+      const to = String(res.headers?.get?.("location") ?? "?").slice(0, 200);
+      throw new RefereeError(
+        `The service answered with a redirect (HTTP ${res.status || "3xx"} to ${to}). The client never follows ` +
+          "redirects, so nothing (and no payment) was sent there. Check the client's url.",
+        res.status,
+        {},
+      );
+    }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new RefereeError(data.error || `HTTP ${res.status}`, res.status, data);
     return data;
