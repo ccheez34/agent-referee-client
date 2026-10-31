@@ -332,9 +332,9 @@ See [`examples/`](../examples) for complete scripts.
 |---|---|
 | *(left out)* | The default panel above. |
 | `"rotate"` | One model from each AI company; which model is chosen at random within each company from the published pool (`GET /judge` → `model_pool`). Over many matches, no fixed set of models decides every case. |
-| `["claude-sonnet-5-5", "google/gemini-4-argon"]` | Exactly these models (2 for `judge-2`, 3 for `judge-3`), each from the pool. |
+| `["openai/gpt-6-luna", "google/gemini-4-argon"]` | Exactly these models (2 for `judge-2`, 3 for `judge-3`), each from the pool. |
 | `[["a","b","c"], ["d","e","f"]]` | Up to 5 agreed sets; one is drawn at random. |
-| `{ "picks": { "buyer": "claude-opus-5-5", "seller": "openai/gpt-6-luna" } }` | `judge-3` with two parties only. Each agent names one judge; the third is drawn at random from a company neither picked, and the seat order is shuffled. Neither side controls the majority. |
+| `{ "picks": { "buyer": "mistralai/mistral-large-4-0", "seller": "openai/gpt-6-luna" } }` | `judge-3` with two parties only. Each agent names one judge; the third is drawn at random from a company neither picked, and the seat order is shuffled. Neither side controls the majority. |
 
 **Opt-in models.** `GET /judge` → `opt_in_models` also lists models from Mistral (EU) and from DeepSeek, Qwen, Kimi and GLM (China). You can name them in an exact list, an agreed set, a judge-3 pick, or a review's `panel`, but they're never drawn at random: `"rotate"` and the drawn third judge of `picks` use `model_pool` only. Their requests go through OpenRouter only to hosts that don't collect request data. If your data can't go to these companies or regions, just don't name them.
 
