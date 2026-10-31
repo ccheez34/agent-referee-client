@@ -206,6 +206,12 @@ export interface OutcomeCheck {
 export interface JudgeAdvisory { advisory: string | null; humanReview: string | null; humanReviewRequired: boolean }
 export function judgeAdvisory(doc: unknown): JudgeAdvisory;
 
+/** The Terms a receipt records (terms_version, terms_sha256), or null for receipts without them. */
+export function receiptTerms(doc: unknown, expected?: string): { version: string; sha256: string | null; matches: boolean | null } | null;
+
+/** True when the service refused a request because the Terms weren't accepted, or an old version was sent. */
+export function isTermsRefusal(err: unknown): boolean;
+
 /** A signed acknowledgment of one step the service accepted. Same shape as a receipt. */
 export interface StepAck {
   payload: {
@@ -264,6 +270,8 @@ export interface AgentRefereeOptions {
   capture?: Capture;
   /** Extra 15-second waits for the other side during join (default 3). */
   joinRetries?: number;
+  /** The Terms version the agent's owner accepts, e.g. "v2026-11-01". Sent as x-accept-terms on every request. */
+  acceptTerms?: string;
   /** Pin the service's receipt-signing key(s) (base64) instead of fetching GET /pubkey. */
   publicKeys?: string[];
   /** Create free demo matches: no wallet or payment needed. Receipts and acks are marked demo. */

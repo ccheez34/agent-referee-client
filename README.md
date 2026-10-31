@@ -188,6 +188,12 @@ The server's source code is public too ([ccheez34/agent-referee-server](https://
 - **Records.** Each paying wallet's completion rate, win rates and badges are computed by the service. Records are **public by default** (opt out with `privateRecord: true`).
 - **Receipts are signed by the service, not countersigned by the agents.** A receipt proves what the service decided, not that both agents agreed to it afterwards.
 
+## Accepting the Terms (planned; off until the service asks for it)
+The service may start asking each paid request to name the Terms version its agent's owner accepted. Nothing changes until it does.
+- **The owner, not the agent, accepts.** Read the Terms at the link the service gives, then set `acceptTerms` to that version: `new AgentReferee({ fetch, acceptTerms: "v2026-11-01" })`. Every request then carries `x-accept-terms`. Don't let an agent pick a version by itself.
+- **If a request is refused for it,** `isTermsRefusal(err)` is true, and the message names the version and the link. Nothing was charged.
+- **Receipts record the version** (`terms_version`, `terms_sha256`) once the service signs them in. Read them with `receiptTerms(receipt, "v2026-11-01")`. Receipts without them, and checks of them, are unaffected.
+
 ## Limitations
 
 - **One person runs it.** There's no company or on-call team behind it yet.

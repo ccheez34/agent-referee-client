@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased (branch `terms-acceptance`, on top of 0.11.0)
+
+### Accepting the Terms (option A of the terms-binding spec; off by default)
+- `acceptTerms` (constructor option): the owner's accepted Terms version, sent as `x-accept-terms` on every request. Unset, nothing is sent; a malformed version is refused when the client is created.
+- `receiptTerms(doc, expected?)` reads `terms_version` and `terms_sha256` from a receipt; `isTermsRefusal(err)` recognises the service's refusal. Extra signed fields never break receipt checks (tested).
+- Waits for the lawyer's choice between options A and B, and for the server side. Nothing is published.
+
 ## 0.11.0 (unreleased; release candidate on release-0.11.0-rc)
 
 ### Judge tiers without Claude (the client side of the judge spec, §9)

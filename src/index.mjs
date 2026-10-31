@@ -169,6 +169,9 @@ export class AgentReferee {
    * @param {boolean} [opts.demo] Create free demo matches (no wallet, no payment). Receipts and acks are marked demo.
    * @param {string[]} [opts.publicKeys] Pin the service's receipt-signing key(s) (base64). Without it, keys are fetched from GET /pubkey.
    * @param {number} [opts.joinRetries] Extra 15-second waits for the other side before giving up (default 3, about 1 minute).
+   * @param {string} [opts.acceptTerms] The Terms version the agent's OWNER accepts, e.g. "v2026-11-01" (see the service's
+   *   Terms link). When set, every request carries `x-accept-terms`, and receipts record the version. Leave it unset
+   *   unless the owner has read and accepted that version: an agent must not accept Terms on its owner's behalf by itself.
    */
   constructor(opts = {}) {
     this.url = (opts.url || DEFAULT_URL).replace(/\/$/, "");
@@ -183,6 +186,10 @@ export class AgentReferee {
     this.onAck = opts.onAck; // called with each signed step acknowledgment as it arrives: persist it
     this.demo = !!opts.demo; // free demo matches: no wallet needed, receipts marked demo
     this._requested = new Map(); // match_id -> the settings this agent asked for
+    if (opts.acceptTerms !== undefined && opts.acceptTerms !== null) {
+      if (!TERMS_VERSION.test(String(opts.acceptTerms))) throw new TypeError('acceptTerms must look like "v2026-11-01" (the version on the Terms page).');
+      this.acceptTerms = String(opts.acceptTerms);
+    }
   }
 
   /**
@@ -224,7 +231,7 @@ export class AgentReferee {
   async _call(method, path, body) {
     const res = await this.fetch(this.url + path, {
       method,
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...(this.acceptTerms ? { "x-accept-terms": this.acceptTerms } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
       // Never follow a redirect: fetch would resend custom headers, X-PAYMENT included, to wherever it points.
       // A payment wrapper must pass these options on to its paid request for this to cover that request too.
@@ -494,6 +501,25 @@ export class AgentReferee {
  * person when `humanReviewRequired` is true. Luck tiers and reviews have neither: { advisory: null, ... false }.
  * @returns {{ advisory: string|null, humanReview: string|null, humanReviewRequired: boolean }}
  */
+const TERMS_VERSION = /^v\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The Terms a receipt records, if the service signed them into it (terms_version and terms_sha256), or null.
+ * Older receipts don't have them. Pass `expected` (e.g. "v2026-11-01") to also get whether it matches.
+ * @returns {{ version: string, sha256: string|null, matches: boolean|null }|null}
+ */
+export function receiptTerms(doc, expected) {
+  const p = doc?.payload ?? doc ?? {};
+  if (typeof p.terms_version !== "string") return null;
+  const sha256 = typeof p.terms_sha256 === "string" && /^[0-9a-f]{64}$/.test(p.terms_sha256) ? p.terms_sha256 : null;
+  return { version: p.terms_version, sha256, matches: expected === undefined ? null : p.terms_version === expected };
+}
+
+/** True when the service refused a request because the Terms weren't accepted (or an old version was sent). */
+export function isTermsRefusal(err) {
+  return err instanceof RefereeError && /x-accept-terms/i.test(String(err.message));
+}
+
 export function judgeAdvisory(doc) {
   const p = doc?.payload ?? doc ?? {};
   const advisory = typeof p.advisory === "string" && p.advisory.trim() ? p.advisory : null;
