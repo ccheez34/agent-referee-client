@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased (branch `capture-request-objects`, on top of 0.11.0)
+- **`captureFetch` under @x402/fetch 2.x** (ledger 3.0-D86): that wrapper sends its paid retry as `fetch(request)`, a `Request` with no options, so the proof wasn't captured and a lost join couldn't be recovered. `captureFetch` now reads the headers and the body from a `Request` too (the body from a clone; the request goes out untouched), and takes either `X-PAYMENT` (x402 v1) or `PAYMENT-SIGNATURE` (v2). Checked against coinbase/x402's own source (packages/http/fetch 2.28.0); 4 new tests, 2 of which failed before the fix.
+
 ## 0.11.0 (unreleased; release candidate on release-0.11.0-rc)
 
 ### Judge tiers without Claude (the client side of the judge spec, §9)

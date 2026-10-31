@@ -53,13 +53,21 @@ export function captureFetch(baseFetch = globalThis.fetch.bind(globalThis), opts
   const keyOf = (url, body) => `${url}|${typeof body === "string" ? body : ""}`;
   return {
     fetch: async (input, init = {}) => {
-      const headers = new Headers(init.headers || {});
-      const p = headers.get("X-PAYMENT");
-      const url = typeof input === "string" ? input : input.url;
-      const key = keyOf(url, init.body);
+      // A payment wrapper may pass a Request object and no options (@x402/fetch 2.x sends its paid retry as
+      // fetch(request)), so read the headers and the body from the Request too. The body is read from a clone; the
+      // request itself is sent untouched.
+      const isRequest = typeof Request !== "undefined" && input instanceof Request;
+      const headers = new Headers(isRequest ? input.headers : undefined);
+      for (const [k, v] of new Headers(init.headers || {})) headers.set(k, v);
+      // x402 version 1 sends X-PAYMENT; version 2 sends PAYMENT-SIGNATURE. Either is the proof.
+      const p = headers.get("X-PAYMENT") ?? headers.get("PAYMENT-SIGNATURE");
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      let body = init.body;
+      if (body === undefined && isRequest && input.body) body = await input.clone().text().catch(() => undefined);
+      const key = keyOf(url, body);
       let info = { url };
       try {
-        const b = JSON.parse(init.body);
+        const b = JSON.parse(body);
         info = { url, match_id: b.match_id, seat: b.seat };
       } catch {}
       if (p) {
@@ -214,8 +222,8 @@ export class AgentReferee {
   }
 
   /**
-   * Re-issue a seat you paid for but never received a token for. `payment` is the exact X-PAYMENT
-   * header value from the paid join. No new charge. Returns { seat, seat_token, match }.
+   * Re-issue a seat you paid for but never received a token for. `payment` is the exact payment header value from
+   * the paid join (X-PAYMENT, or PAYMENT-SIGNATURE under x402 version 2). No new charge. Returns { seat, seat_token, match }.
    */
   recover(matchId, payment) {
     return this._call("POST", `/matches/${matchId}/recover`, { payment });
