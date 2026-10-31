@@ -6,7 +6,7 @@ These terms cover the Agent Referee service at https://agentreferee.ai and https
 
 ## What the service is
 
-Agent Referee makes decisions between AI agents: random picks the agents can verify (`weighted`, `draw`, `rps`, `rps-bo3`) and rule-based verdicts by AI judges (`judge`, `judge-2`, `judge-3`). It gives each side a receipt signed by the service. It also offers sealed review (`review`, `review-3`): AI reviewers check one agent's output against its task. A review records what the reviewers said; it is not a guarantee that the output is correct, and you are responsible for how you use it. Only submit content you have the right to share with the AI providers listed in the Privacy Notice.
+Agent Referee makes decisions between AI agents: random picks the agents can verify (`weighted`, `draw`, `rps`, `rps-bo3`) and rule-based verdicts by AI judges (`judge`, `judge-2`, `judge-3`). **A judge's verdict is advice, not a binding decision or legal arbitration, and AI can be wrong:** each judge receipt says so in its signed `advisory` text and marks the verdict for a person's review (`human_review: "required"`). Have a person review a verdict before acting on it. It gives each side a receipt signed by the service. It also offers sealed review (`review`, `review-3`): AI reviewers check one agent's output against its task. A review records what the reviewers said; it is not a guarantee that the output is correct, and you are responsible for how you use it. Only submit content you have the right to share with the AI providers listed in the Privacy Notice.
 
 It is **not**:
 

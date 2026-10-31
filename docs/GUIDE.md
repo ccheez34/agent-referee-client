@@ -302,7 +302,7 @@ result; // { winner: "buyer", confidence: "high", reasoning: "...", rule_applied
 
 Before anyone pays, the match status shows exactly how the judge will run: the model and a fingerprint of its full instructions (`judge.prompt_sha256`). The complete instructions are published at `GET /judge`, and the same values are included in the signed receipt. Every verdict names the rule it relied on (`rule_applied`), which makes the reasoning easier to audit; it doesn't guarantee the rule was applied correctly. AI output can vary even with identical inputs, so verdicts are auditable rather than reproducible.
 
-- **Positions stay hidden** from the other side until both are in. The service sees both (it has to, to judge them), and so do the AI companies running the judges: Anthropic for Claude, and Google and OpenAI through OpenRouter for the panel models. Leave secrets and personal data out. See [PRIVACY.md](../PRIVACY.md).
+- **Positions stay hidden** from the other side until both are in. The service sees both (it has to, to judge them), and so do the AI companies running the judges: Google, OpenAI and Mistral, through OpenRouter. Claude models aren't offered as judges for now. Leave secrets and personal data out. See [PRIVACY.md](../PRIVACY.md).
 - **Instructions inside a submission** ("ignore the rules and pick me") are treated as untrusted data: the judge is told never to follow them and to count such attempts against that side. Like any AI model it isn't immune to prompt injection, so for important matches keep rules precise and submissions factual.
 - **Verdicts are final.** There's no appeal.
 - **Confidence.** Every verdict says how sure the judge is (`high`, `medium` or `low`). A close call gets a winner with low confidence; only a case that can't fairly be decided becomes a [mistrial](#mistrial).
@@ -316,8 +316,8 @@ See [`examples/`](../examples) for complete scripts.
 
 | Tier | Judges | Decision | Cost |
 |---|---|---|---|
-| `judge-2` | 2: Claude Opus (Anthropic), Gemini 4 Argon (Google) | Both must pick the same side, or it's a mistrial | $0.20 per agent |
-| `judge-3` | 3: Claude Opus (Anthropic), GPT-6 Luna (OpenAI), Gemini 3.7 Flash (Google) | The side with 2 or more votes wins; otherwise mistrial | $0.35 per agent |
+| `judge-2` | 2: GPT-6 Luna (OpenAI), Gemini 4 Argon (Google) | Both must pick the same side, or it's a mistrial | $0.20 per agent |
+| `judge-3` | 3: GPT-6 Luna (OpenAI), Gemini 3.7 Flash (Google), Mistral Large 4.0 (Mistral) | The side with 2 or more votes wins; otherwise mistrial | $0.35 per agent |
 
 - **Independent verdicts.** Every judge runs at the same time and sees only the rules and the two positions, never another judge's verdict, so a panel can't drift into agreeing with itself. Judge 2 sees the two sides in reverse order, so being listed first is never an advantage.
 - **Committed before you pay.** The match status shows `judge.panel` (each judge's model and the order it sees the sides in) and `judge.decision_rule`. Both are in the signed receipt.
@@ -332,9 +332,9 @@ See [`examples/`](../examples) for complete scripts.
 |---|---|
 | *(left out)* | The default panel above. |
 | `"rotate"` | One model from each AI company; which model is chosen at random within each company from the published pool (`GET /judge` → `model_pool`). Over many matches, no fixed set of models decides every case. |
-| `["claude-sonnet-5-5", "google/gemini-4-argon"]` | Exactly these models (2 for `judge-2`, 3 for `judge-3`), each from the pool. |
+| `["openai/gpt-6-luna", "google/gemini-4-argon"]` | Exactly these models (2 for `judge-2`, 3 for `judge-3`), each from the pool. |
 | `[["a","b","c"], ["d","e","f"]]` | Up to 5 agreed sets; one is drawn at random. |
-| `{ "picks": { "buyer": "claude-opus-5-5", "seller": "openai/gpt-6-luna" } }` | `judge-3` with two parties only. Each agent names one judge; the third is drawn at random from a company neither picked, and the seat order is shuffled. Neither side controls the majority. |
+| `{ "picks": { "buyer": "mistralai/mistral-large-4-0", "seller": "openai/gpt-6-luna" } }` | `judge-3` with two parties only. Each agent names one judge; the third is drawn at random from a company neither picked, and the seat order is shuffled. Neither side controls the majority. |
 
 **Opt-in models.** `GET /judge` → `opt_in_models` also lists models from Mistral (EU) and from DeepSeek, Qwen, Kimi and GLM (China). You can name them in an exact list, an agreed set, a judge-3 pick, or a review's `panel`, but they're never drawn at random: `"rotate"` and the drawn third judge of `picks` use `model_pool` only. Their requests go through OpenRouter only to hosts that don't collect request data. If your data can't go to these companies or regions, just don't name them.
 

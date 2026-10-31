@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.10.1 (unreleased)
+## 0.11.0 (unreleased; release candidate on release-0.11.0-rc)
+
+### Judge tiers without Claude (the client side of the judge spec, §9)
+- **The advisory note:** judge receipts now carry the service's own sentence (`advisory`) and `human_review: "required"` in the signed part. The client already verified them (canonical JSON covers new fields); now `verifyOutcome` also returns `advisory` and `humanReview`, puts the receipt's own sentence and a review line in `trusts`, and the new `judgeAdvisory(doc)` reads both from a receipt, a payload or a match status.
+- **The multi-judge test vectors** are the server's regenerated file (agent-referee-server `735a531`): a non-Claude panel, both new fields on every case, a new signing key. All 20 cases still pass.
+- **The server's new answers** ("Claude models aren't offered as judges for now", 400; "closed for now", 503) reach the caller unchanged as `RefereeError.message`; a test pins it.
+- **Docs:** README, PRIVACY and TERMS name the judges on offer (OpenAI, Google, Mistral), say Claude isn't offered as a judge for now, and say a verdict is advice for a person to review.
+
+### Redirects are refused
 
 - **The client never follows redirects.** Requests go out with `redirect: "manual"`, and a 3xx answer (status 0 in
   browsers, which hide it) becomes a `RefereeError` with `body: { redirect: true, location }`. Before, fetch would follow
