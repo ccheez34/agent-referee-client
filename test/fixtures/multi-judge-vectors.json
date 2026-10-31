@@ -1,7 +1,7 @@
 {
   "generated_by": "agent-referee-server scripts/gen-multi-judge-vectors.mjs",
   "receipt_format": "judge-multi-v1",
-  "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI=",
+  "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng=",
   "notes": [
     "Verify the signature (Ed25519 over canonical JSON of payload) against public_key, for the receipt and for every ack.",
     "Then: receipt_format must be known; tier judge-3x2 (2 pieces per side) or judge-3x3 (3); proof.judge.format_version agent-referee-judge-v5-multi; no proof.submission_sha256; for every side in proof.pieces, proof.pieces_sha256[side] = sha256 hex of canonical JSON of proof.pieces[side], each record {index, sha256, chars} (no name), chars in UTF-16 code units.",
@@ -81,7 +81,7 @@
               "tier": "judge-3x2",
               "seat": "alpha",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.171Z",
+              "accepted_at": "2026-10-31T03:24:59.432Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -97,9 +97,9 @@
               ],
               "pieces_sha256": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
             },
-            "signature": "It5hWSKnD9K9q6jvp5jNoB+jEvABzsJy5NZXeigYnEI6yeXPBYEMXlK/cX8cuvzFhcs/piszhKrjMImGFv9wCQ==",
+            "signature": "vzQ6qC+418T4romn8WZ9BQgA7VFNyCU4QMBgsP6iL7F03LijrQleh2maruWJCXR4aMFvHRa2muXniGJ+wbgLCg==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           },
           {
             "payload": {
@@ -109,7 +109,7 @@
               "tier": "judge-3x2",
               "seat": "beta",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.173Z",
+              "accepted_at": "2026-10-31T03:24:59.434Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -125,9 +125,9 @@
               ],
               "pieces_sha256": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
-            "signature": "7/1toTXsmhKfe09toQe1BGtbhi7F7BHXmSgeieReWIYXbpIKq8klt4ZaBkRh6az7VulBX9vSI/uEgriL9rZFDw==",
+            "signature": "BNaXe2A4/OwvLhB29WCfWsE1blHqQLgBIKGOJS3VO2KznCwPkEdTTCExjUO+Yvf5bS8wsO3y9dy2AlKwk1fOAQ==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           }
         ]
       },
@@ -142,7 +142,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -154,33 +154,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -217,21 +217,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -240,20 +240,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "signature": "zwIRnAw1OcQfAKYwrQJDezJ34gNq+v8E59QskHs/3ZDC6gLbc5r0poOlE79uUtmqJFHOKgxlAka03kshS3tPCQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": true,
@@ -285,7 +287,7 @@
               "tier": "judge-3x3",
               "seat": "alpha",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.184Z",
+              "accepted_at": "2026-10-31T03:24:59.447Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -306,9 +308,9 @@
               ],
               "pieces_sha256": "dccccf636177272c8dbd5a1a97d1d0e9b01e46cb07acd33eb240c9d16ce69036"
             },
-            "signature": "WKVIty1WQYdEKNpwnlMk0QC5HYhnAemqx+VjOBUFDF9YBY/xKFXgElToGMOhJVwipOLPnQV/fBQyCn6cUnWoAw==",
+            "signature": "JVuDUeb2nRmpZmOp5hsUVlZGxe37/g23ZxB/H57sKhE00Abt5ocHgXOep9jZo1nuVv053QXpKUCcuKNuZlZGDg==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           },
           {
             "payload": {
@@ -318,7 +320,7 @@
               "tier": "judge-3x3",
               "seat": "beta",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.185Z",
+              "accepted_at": "2026-10-31T03:24:59.448Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -339,9 +341,9 @@
               ],
               "pieces_sha256": "02a12ce1ad35151b71dfafea536feed9bb0cb0a95cad7aaeec22f7a697273f1a"
             },
-            "signature": "ugVaa8x+3nfm1OWihPR/qTd3b8uM8GV0lTa0lzibcGPQVEefYBm98djBQOiMmo7IIPts76ee0Sb0VDWBMVYxCw==",
+            "signature": "J0Kz3HPSqDT2T0PkoCukSKk7HaGGrp0T5JHTSU0HmWvlThXkRhCDafUTlgZLoQNkiFX7JYSLw1uMSQX3I64NDA==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           }
         ]
       },
@@ -356,7 +358,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.187Z",
+          "decided_at": "2026-10-31T03:24:59.450Z",
           "outcome": {
             "winner": "beta",
             "decision_rule": "majority",
@@ -368,18 +370,8 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
-                "order": "sorted",
-                "winner": "beta",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
                 "model": "openai/gpt-6-luna",
-                "order": "reversed",
+                "order": "sorted",
                 "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
@@ -387,14 +379,24 @@
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -441,21 +443,21 @@
               "beta": "02a12ce1ad35151b71dfafea536feed9bb0cb0a95cad7aaeec22f7a697273f1a"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -464,20 +466,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "FFx21USHCAzEuP/HfPa9gPFs2ub3vCS4d/JxZS4g8YZ5CUy+rOYr5kjGknJFKdQGQOkWWo52t8EmRO/FCe6uDA==",
+        "signature": "YykRMf91tE2Uo4G3qraq9Ez5XgyZrGwj4ad+6+lK/T3TrKIwiW6S60p/DH1OOQOpmuOmZCKBD2nryOK+s5q1Bg==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": true,
@@ -503,7 +507,7 @@
               "tier": "judge-3x2",
               "seat": "alpha",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.191Z",
+              "accepted_at": "2026-10-31T03:24:59.461Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -519,9 +523,9 @@
               ],
               "pieces_sha256": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
             },
-            "signature": "ZQ78l/xjQR/m+AbYW8PbbfzZgRcSGrKBtMnVlOG57SscBd/8QMlGyYUIDaNGbDBS7htbBxxH68W1+hKlSSDpBQ==",
+            "signature": "QK5yr9Ib2NgKc0E4c/t0zpTYDwdZYP58b1Ale10D5X/0p1j7UJ6/R8wfZEsDPRGjG3H2LfEBxIa0Vdun9HXsBg==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           }
         ]
       },
@@ -536,7 +540,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:30:54.192Z",
+          "decided_at": "2026-10-31T03:35:59.463Z",
           "outcome": {
             "winner": "alpha",
             "by_forfeit": true,
@@ -564,21 +568,21 @@
               "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -587,20 +591,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "pB8cjO/sFI3w7zQjfgDMpU2gmVyFAQJ+RR8gxTiVMGbGpGnpdo8AoozTFWBa8SOarFjKxNbVNxHR21xsBKGbDg==",
+        "signature": "lza2N0cY3qxGPxDZzuoSSMawHmgRJOobhbI8N27pxAvZWXSzZdKJgTnVhzao5+DHraEiyhN2uMHoDs5fb+QwBw==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": true,
@@ -634,7 +640,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -646,33 +652,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -709,21 +715,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -732,20 +738,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "signature": "zwIRnAw1OcQfAKYwrQJDezJ34gNq+v8E59QskHs/3ZDC6gLbc5r0poOlE79uUtmqJFHOKgxlAka03kshS3tPCQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -778,7 +786,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -790,33 +798,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -853,21 +861,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -876,20 +884,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "signature": "zwIRnAw1OcQfAKYwrQJDezJ34gNq+v8E59QskHs/3ZDC6gLbc5r0poOlE79uUtmqJFHOKgxlAka03kshS3tPCQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -923,7 +933,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -935,33 +945,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -998,21 +1008,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -1021,20 +1031,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "signature": "zwIRnAw1OcQfAKYwrQJDezJ34gNq+v8E59QskHs/3ZDC6gLbc5r0poOlE79uUtmqJFHOKgxlAka03kshS3tPCQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -1067,7 +1079,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -1079,33 +1091,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -1142,21 +1154,21 @@
               "beta": "0000000000000000000000000000000000000000000000000000000000000000"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -1165,20 +1177,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "AfVNF2QasW8ENr1L4IIoKiuCYA/MCovOGUJm1G/nP3phXmvmJdUGnsYudhzc4AyrHJvRBQakfsK0pfY9IlgEAA==",
+        "signature": "wBi7ddSYWibH0ppCdAGdNJe3TXuRDUwjckBIEHQ7JeZ71PIbaHbm1WDoNM375NQ+q50jLfJQNNMG9aA0DaNnDw==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -1213,7 +1227,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.187Z",
+          "decided_at": "2026-10-31T03:24:59.450Z",
           "outcome": {
             "winner": "beta",
             "decision_rule": "majority",
@@ -1225,18 +1239,8 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
-                "order": "sorted",
-                "winner": "beta",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
                 "model": "openai/gpt-6-luna",
-                "order": "reversed",
+                "order": "sorted",
                 "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
@@ -1244,14 +1248,24 @@
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -1298,21 +1312,21 @@
               "beta": "02a12ce1ad35151b71dfafea536feed9bb0cb0a95cad7aaeec22f7a697273f1a"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -1321,20 +1335,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "awUvGuMD+qLFZOPqhlSjG6wgNPmwY2E1tN7CjuLu5+fskhq0rLGMH+GIc7CZ1/xzpveS2ql2MOs535UhDUe+CQ==",
+        "signature": "ss/B3oVs0mYBdzJmvEqrof84EJmOcxbQ1LgQEnS/ZYa98gVpWa3um2igJvxf1qZJi6lJNOOXbW9da31ojWeOCQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -1367,7 +1383,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -1379,33 +1395,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -1429,21 +1445,21 @@
               "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -1452,20 +1468,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "1jJDchBLA1v7+yoe0L3quO8LamjrmylJBI+PEE4DFJjaew1cRIpbV8/ZimfnubPD9rtEYV32rT9BvflN9/YZBA==",
+        "signature": "9FPhNT+lya5Xq+DBVApVkSlNFyejudepMQaDNODebd4jLBlwvGV+mb8OT2paS222ovcGYyphuxlB4AEpiTBeCw==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -1498,7 +1516,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -1510,33 +1528,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -1573,21 +1591,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -1596,9 +1614,9 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             },
             "submission_sha256": {
@@ -1609,11 +1627,13 @@
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "a7ovGezriiFyknnSaC4NEjmKaX9fJ3T5Lx63F9+PZ8nimdL1619CQ27eH1gF5iEUg4AEk6uXChMamqJYeJbxDw==",
+        "signature": "ZhkmlZyKkDTk72GYXTFSXoecrG6FW5sS5s/FZhWzw/ua68aug50ztNhg7ktW4ki3wTOx/RtwUDt51d+3aPdBAA==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -1646,7 +1666,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "beta",
             "decision_rule": "majority",
@@ -1658,33 +1678,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -1721,21 +1741,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -1744,20 +1764,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "8Lr3w8UB2+otyo2rlIvb0wrTkptcc6hy5w7b9cW7bj9+7sT3VvVPHIVASqWrgdRmVESR3ft4qDdFukod7n3bBQ==",
+        "signature": "3PakdT9Eg3cposmuSbE1wmLRgBzKt95QbR8HQ3OoU468pWvuVKKWSNl2k+J8syp4uwkyclLilH/BGy9/7YPmBQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -1790,7 +1812,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -1802,33 +1824,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -1865,21 +1887,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -1888,20 +1910,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "d97nsh6/fMqWuTjIim7VpBa2FfKoRUM78iOkSpGF6SH0ZjD0a1iEiIW8AZ8FjNgY1Kz+Us+98M3e3JcVoLzcCw==",
+        "signature": "Nm+BtFjJzd0XVPfsvFIliiU096KaL9SuDDjlj43VE1X2dRXUgOw+IogfS+saj8f7uyJLFG1Cc7cDypolIIggBw==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -1934,7 +1958,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -1946,23 +1970,23 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
+                "model_reported": "openai/gpt-6-luna"
               },
               {
                 "panelist": 2,
-                "model": "openai/gpt-6-luna",
+                "model": "google/gemini-4-argon",
                 "order": "reversed",
                 "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "openai/gpt-6-luna"
+                "model_reported": "google/gemini-4-argon"
               }
             ]
           },
@@ -1999,21 +2023,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -2022,20 +2046,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "E/KFPHxCg++FayBp96tuHIiXgkV8j8PgX1TD8H0hnKPxjtEDRH+hRQPc2lVqqA0JhEF27zc8jQQI4S74P2/gDw==",
+        "signature": "KbDgzoeHwhf+/oMuf9+dc+ZkPIQPASf+iSxzGuHKK+8nWD+k/b/5Jn/GgpJIUe7EJLzZq/pefvaWiAxYqbsGCw==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -2068,7 +2094,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -2080,13 +2106,13 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
+                "model_reported": "openai/gpt-6-luna"
               },
               {
                 "panelist": 2,
@@ -2096,7 +2122,7 @@
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "openai/gpt-6-luna"
+                "model_reported": "google/gemini-4-argon"
               },
               {
                 "panelist": 3,
@@ -2106,7 +2132,7 @@
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -2143,13 +2169,13 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
@@ -2166,20 +2192,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "V8ZxI9oPfQen8H79jVTxzhpL7MoqBa7NXg9bLuJ25x+hyseklfNv5v1dGaASvp3nMvZN7VF9kJBnbzsTkpmoAA==",
+        "signature": "yQu4KN1++j1ZPnONjz93i2gyppwFnstl8WWxM86F64nUFT/tGur67USu/wFBJY1TwYyavnMFIS0D8g7KxUL1AQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -2212,7 +2240,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -2224,33 +2252,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -2287,21 +2315,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v4",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -2310,20 +2338,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "l/xlo8kLuf0QRvdFYrqmrn3VdJ2s1vArDQhL6s2lUa+UP9D9+8crwp8S2I9+fbfxrwjmE+T8NGvMcBAzLdJjAA==",
+        "signature": "hBtsb68czM3okkpAa9u/R6HPXyLDDZbZB5JudntyChWutyquxIXOP4MACaudyzAR+hGUND723Oqbn8Oqlpx2DA==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -2356,7 +2386,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -2368,33 +2398,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -2431,21 +2461,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -2454,20 +2484,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "kVaNb5+piNcAin5u0YFFtFECaIFSlsMmk7FD1F5CxpncoQU3D6C5DmdY5/aUXSRHNjb2WbDzlM/bOJNSwHXLAQ==",
+        "signature": "VQ7M4uixqNT1A3635NNXtNIwkVDmdTMjRDBxr6F/JqTuD9ivNMdyhs/RbKSU3lfwBrVefDNRYZcYp/4Q4k+VAA==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -2500,7 +2532,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -2512,33 +2544,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -2575,21 +2607,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -2598,20 +2630,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "LB2KlmEal6QZpfCRu1azsNwEZH8JC1uL7E6AfIY8eDOZ7dBo9v2dubH0uy3FCJnpQNqQLKzCEgWVTgrYm4dVDA==",
+        "signature": "coviwPGi/7DBRe6BAuGQWkoIRryKXFt6HlzmVNBz02wFon9gRBgrot0KVucd6K31Xs7Nmjx2axuJ0FDp8wwvBQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -2644,7 +2678,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "beta",
             "decision_rule": "majority",
@@ -2656,33 +2690,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -2719,21 +2753,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -2742,20 +2776,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "signature": "zwIRnAw1OcQfAKYwrQJDezJ34gNq+v8E59QskHs/3ZDC6gLbc5r0poOlE79uUtmqJFHOKgxlAka03kshS3tPCQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -2776,7 +2812,7 @@
               "tier": "judge-3x2",
               "seat": "alpha",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.171Z",
+              "accepted_at": "2026-10-31T03:24:59.432Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -2792,9 +2828,9 @@
               ],
               "pieces_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
             },
-            "signature": "JRkvIIIqwa2UnTaoNfFei8+LqYcSp/kDTgtYqQAU80fE+M6bpvnxAetOD7hWZ94XL4AERRRMavLzDocoy6eeBw==",
+            "signature": "k6VAd61YkZOoii4rQBS/DBify34ugvKT1jBg/DkEcWWRNpt/2kPD7sJEjVWbbSE2DCE5U9E2jI49kjpIaNA0AA==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           }
         ]
       },
@@ -2809,7 +2845,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:19:54.178Z",
+          "decided_at": "2026-10-31T03:24:59.439Z",
           "outcome": {
             "winner": "alpha",
             "decision_rule": "majority",
@@ -2821,33 +2857,33 @@
             "votes": [
               {
                 "panelist": 1,
-                "model": "claude-sonnet-5-5",
+                "model": "openai/gpt-6-luna",
                 "order": "sorted",
                 "winner": "alpha",
-                "confidence": "high",
-                "rule_applied": "costs less wins",
-                "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "claude-sonnet-5-5"
-              },
-              {
-                "panelist": 2,
-                "model": "openai/gpt-6-luna",
-                "order": "reversed",
-                "winner": "beta",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
                 "model_reported": "openai/gpt-6-luna"
               },
               {
-                "panelist": 3,
+                "panelist": 2,
                 "model": "google/gemini-4-argon",
+                "order": "reversed",
+                "winner": "beta",
+                "confidence": "high",
+                "rule_applied": "costs less wins",
+                "reasoning": "[side alpha, piece 1] is cheaper.",
+                "model_reported": "google/gemini-4-argon"
+              },
+              {
+                "panelist": 3,
+                "model": "mistralai/mistral-large-4-0",
                 "order": "sorted",
                 "winner": "alpha",
                 "confidence": "high",
                 "rule_applied": "costs less wins",
                 "reasoning": "[side alpha, piece 1] is cheaper.",
-                "model_reported": "google/gemini-4-argon"
+                "model_reported": "mistralai/mistral-large-4-0"
               }
             ]
           },
@@ -2884,21 +2920,21 @@
               "beta": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -2907,20 +2943,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "Id5mgr8PkMML1VZz6IJ1ksok9bDHxPnpLOa5WSirpUjU3KFIA+8Y5+/lwE/3fxOQP2JwF1/AMbB00gtpKlLYAA==",
+        "signature": "zwIRnAw1OcQfAKYwrQJDezJ34gNq+v8E59QskHs/3ZDC6gLbc5r0poOlE79uUtmqJFHOKgxlAka03kshS3tPCQ==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,
@@ -2946,7 +2984,7 @@
               "tier": "judge-3x2",
               "seat": "alpha",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.191Z",
+              "accepted_at": "2026-10-31T03:24:59.461Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -2962,9 +3000,9 @@
               ],
               "pieces_sha256": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
             },
-            "signature": "ZQ78l/xjQR/m+AbYW8PbbfzZgRcSGrKBtMnVlOG57SscBd/8QMlGyYUIDaNGbDBS7htbBxxH68W1+hKlSSDpBQ==",
+            "signature": "QK5yr9Ib2NgKc0E4c/t0zpTYDwdZYP58b1Ale10D5X/0p1j7UJ6/R8wfZEsDPRGjG3H2LfEBxIa0Vdun9HXsBg==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           },
           {
             "payload": {
@@ -2974,7 +3012,7 @@
               "tier": "judge-3x2",
               "seat": "beta",
               "step": "submit",
-              "accepted_at": "2026-10-29T05:19:54.171Z",
+              "accepted_at": "2026-10-31T03:24:59.432Z",
               "receipt_format": "judge-multi-v1",
               "pieces": [
                 {
@@ -2990,9 +3028,9 @@
               ],
               "pieces_sha256": "1de523c62eb8fe6c7f97935fff74acc66af36db57f7f34dfa1b8c49d37b14b69"
             },
-            "signature": "hBW+uR5IoCGQuPRdypGZZ0msDYNOwyOdN2nCigLyveafvLja+Ds4cLbDIKZjCFvmL8oV8To/F6U9Neeac6BhAg==",
+            "signature": "qER9fheNiQyRV+A+57o3Erm3RNWcQFNwxiq4GdfLrtIm1zkO//7MQVjeXRyA7CPl2yFTnoN7NcqfgM5YFypxCA==",
             "algorithm": "Ed25519",
-            "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+            "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
           }
         ]
       },
@@ -3007,7 +3045,7 @@
             "alpha",
             "beta"
           ],
-          "decided_at": "2026-10-29T05:30:54.192Z",
+          "decided_at": "2026-10-31T03:35:59.463Z",
           "outcome": {
             "winner": "alpha",
             "by_forfeit": true,
@@ -3035,21 +3073,21 @@
               "alpha": "e9f5507dcab94a8f8b8a33a6aaeb1e2752648008f51999a889e5a8b4d60d16f5"
             },
             "judge": {
-              "model": "claude-sonnet-5-5",
+              "model": "openai/gpt-6-luna",
               "temperature": null,
               "format_version": "agent-referee-judge-v5-multi",
               "prompt_sha256": "f99d08cb4dd1b1b2739b032d38db5f3100f4c170ac0f99b1e9870ff80bd27a05",
               "panel": [
                 {
-                  "model": "claude-sonnet-5-5",
+                  "model": "openai/gpt-6-luna",
                   "order": "sorted"
                 },
                 {
-                  "model": "openai/gpt-6-luna",
+                  "model": "google/gemini-4-argon",
                   "order": "reversed"
                 },
                 {
-                  "model": "google/gemini-4-argon",
+                  "model": "mistralai/mistral-large-4-0",
                   "order": "sorted"
                 }
               ],
@@ -3058,20 +3096,22 @@
                 "mode": "custom"
               },
               "max_tokens": {
-                "claude-sonnet-5-5": 12000,
                 "openai/gpt-6-luna": 4000,
-                "google/gemini-4-argon": 4000
+                "google/gemini-4-argon": 4000,
+                "mistralai/mistral-large-4-0": 12000
               }
             }
           },
           "paid_by": {
             "alpha": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "beta": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-          }
+          },
+          "advisory": "Advisory only: AI judges give this match's verdict as advice, not a binding decision or legal arbitration, and AI can be wrong. A person should review it before acting on it.",
+          "human_review": "required"
         },
-        "signature": "pB8cjO/sFI3w7zQjfgDMpU2gmVyFAQJ+RR8gxTiVMGbGpGnpdo8AoozTFWBa8SOarFjKxNbVNxHR21xsBKGbDg==",
+        "signature": "lza2N0cY3qxGPxDZzuoSSMawHmgRJOobhbI8N27pxAvZWXSzZdKJgTnVhzao5+DHraEiyhN2uMHoDs5fb+QwBw==",
         "algorithm": "Ed25519",
-        "public_key": "enRK5haNU5LsglcmPa/47cKNarV/ErNsdgH6INUspUI="
+        "public_key": "wYPNb5cga8CfYQjtRddhvsRJ1GDs4wLISDyfOPos0ng="
       },
       "expect": {
         "ok": false,

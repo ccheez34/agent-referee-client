@@ -196,7 +196,15 @@ export interface OutcomeCheck {
   signed?: boolean;
   /** Signed acknowledgments the receipt contradicts. Each pair (ack + receipt) proves it to anyone. */
   evidence: Contradiction[];
+  /** Judge tiers: the receipt's own advisory sentence (signed). Show it with the verdict. null on other tiers. */
+  advisory?: string | null;
+  /** Judge tiers: the receipt's human-review marker, "required": hold the verdict for a person. null on other tiers. */
+  humanReview?: string | null;
 }
+
+/** The advisory note and human-review marker on a judge-tier verdict (receipt, payload or match status). */
+export interface JudgeAdvisory { advisory: string | null; humanReview: string | null; humanReviewRequired: boolean }
+export function judgeAdvisory(doc: unknown): JudgeAdvisory;
 
 /** A signed acknowledgment of one step the service accepted. Same shape as a receipt. */
 export interface StepAck {

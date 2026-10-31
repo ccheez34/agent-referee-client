@@ -459,6 +459,20 @@ export class AgentReferee {
  * Check that a receipt or step acknowledgment was signed by one of `publicKeys` (base64 Ed25519).
  * Standalone and offline: no client, no network. This is what a third party uses to check evidence.
  */
+/**
+ * The advisory note on a judge-tier verdict, read from a receipt (or its payload) or a match status: the service's
+ * own sentence (`advisory`) and its human-review marker (`human_review`, "required" on every judge tier). Both are
+ * in the signed part of a judge receipt. Show `advisory` wherever you show a verdict, and hold the verdict for a
+ * person when `humanReviewRequired` is true. Luck tiers and reviews have neither: { advisory: null, ... false }.
+ * @returns {{ advisory: string|null, humanReview: string|null, humanReviewRequired: boolean }}
+ */
+export function judgeAdvisory(doc) {
+  const p = doc?.payload ?? doc ?? {};
+  const advisory = typeof p.advisory === "string" && p.advisory.trim() ? p.advisory : null;
+  const humanReview = typeof p.human_review === "string" ? p.human_review : null;
+  return { advisory, humanReview, humanReviewRequired: humanReview === "required" };
+}
+
 export async function verifySignature(doc, publicKeys = []) {
   if (!doc?.signature || !doc?.payload) return false;
   const trusted = publicKeys.filter(Boolean);
@@ -967,7 +981,11 @@ export async function verifyOutcome(receipt, opts = {}) {
   const me = opts.seat;
   const evidence = findContradictions(p, opts.acks ?? me?.acks ?? []);
   if (!me) for (const e of evidence) problems.push(e.reason);
-  const done = (recomputed) => ({ ok: problems.length === 0, recomputed, problems, trusts, evidence });
+  const adv = judgeAdvisory(p);
+  if (adv.advisory) trusts.push(adv.advisory); // the receipt's own words, signed (judge spec §9): not a copy kept here
+  if (adv.humanReviewRequired)
+    trusts.push("The service marks this verdict for a person's review (human_review: required). Don't act on it in a step that can't be undone until someone has reviewed it.");
+  const done = (recomputed) => ({ ok: problems.length === 0, recomputed, problems, trusts, evidence, advisory: adv.advisory, humanReview: adv.humanReview });
 
   // The receipt must describe the match this agent agreed to (tier, seats, odds, options, rules, demo or not).
   if (me?.requested) await checkSettings(p, me.requested, problems);

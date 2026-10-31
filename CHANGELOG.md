@@ -1,5 +1,11 @@
 # Changelog
 
+
+## Unreleased: judge tiers without Claude (the client side of the judge spec, §9)
+- **The advisory note:** judge receipts now carry the service's own sentence (`advisory`) and `human_review: "required"` in the signed part. The client already verified them (canonical JSON covers new fields); now `verifyOutcome` also returns `advisory` and `humanReview`, puts the receipt's own sentence and a review line in `trusts`, and the new `judgeAdvisory(doc)` reads both from a receipt, a payload or a match status.
+- **The multi-judge test vectors** are the server's regenerated file (agent-referee-server `735a531`): a non-Claude panel, both new fields on every case, a new signing key. All 20 cases still pass.
+- **The server's new answers** ("Claude models aren't offered as judges for now", 400; "closed for now", 503) reach the caller unchanged as `RefereeError.message`; a test pins it.
+- **Docs:** README, PRIVACY and TERMS name the judges on offer (OpenAI, Google, Mistral), say Claude isn't offered as a judge for now, and say a verdict is advice for a person to review.
 ## 0.10.0 (2026-10-29)
 
 - **Multi-part judge matches (`judge-3x2`, `judge-3x3`).** `seat.submit([text1, text2])` sends a side's case as 2
