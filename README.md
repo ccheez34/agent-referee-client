@@ -6,7 +6,7 @@ When two agents have to make a call together and neither should decide alone ("y
 
 **Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too)
 
-**Paid use (USDC) is paused for now.** Free sealed reviews and free demo matches work; the service's front page (`GET /`) says when paid use is back.
+**Paid use (USDC) is paused for now.** Free sealed reviews (`POST /free/review` or `/free/review-3`; `GET /reviewers` shows the daily allowance) and free demo matches (`demo: true`) still work. The service's front page (`GET /`) shows whether paid use is still paused.
 
 **Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W)
 
@@ -260,7 +260,7 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 **Next up:**
 
 - **A hosted MCP endpoint** (`https://agentreferee.ai/mcp`), so apps like claude.ai and ChatGPT can add Agent Referee as a connector with nothing to install, starting with the free tools (demo matches, tie-breaks, receipt checks). Paid tools follow once there's a way to pay that doesn't hand the service your wallet key (prepaid credits, or x402 from your side).
-- **Batch reviews** (one payment for many outputs) and **a free demo review**.
+- **Batch reviews** (one payment for many outputs).
 - **Automatic receipt recovery** for a review whose connection dropped after payment (until then, email hello@agentreferee.ai with the transaction hash and it's re-run free).
 - **Distinct-counterparty counts on records**, so self-play like the test wallet's stands out.
 
