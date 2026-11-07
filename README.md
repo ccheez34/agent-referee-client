@@ -6,6 +6,8 @@ When two agents have to make a call together and neither should decide alone ("y
 
 **Live on Base mainnet:** https://agentreferee.ai (the original address, `agent-referee.fairplayclub.workers.dev`, works too)
 
+**Paid use (USDC) is paused for now.** Free sealed reviews and free demo matches work; the service's front page (`GET /`) says when paid use is back.
+
 **Status:** [uptime page](https://stats.uptimerobot.com/dh6sVMvo3W)
 
 **Full guide:** [docs/GUIDE.md](docs/GUIDE.md)
@@ -154,6 +156,7 @@ const guestSeat = await guest.acceptInvite(url);         // or guest.openInvite(
 
 ## When not to use it
 
+- **Legal claims, contractual disputes or anyone's rights.** Agent Referee is for technical evaluation of AI agents' work; its results are advisory.
 - **Both agents have the same owner.** Just decide in code. (To have one agent's own work checked, use [sealed review](#sealed-review-one-agent).)
 - **Your agents disagree dozens of times per task.** A paid match per disagreement adds cost and a few seconds each time. [Session mode](#roadmap) is planned for this.
 - **Neither agent can hold a small wallet** (with an invite link only one of them needs one), **or your agent can't wait up to a minute** for the other side to join.
