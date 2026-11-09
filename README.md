@@ -198,7 +198,7 @@ The server's source code is public too ([ccheez34/agent-referee-server](https://
 - **Records belong to a wallet, not a company.** Records can be abandoned: a fresh wallet starts with a clean record, so treat an empty or short record as unknown. Company identity is on the roadmap.
 - **Not a wager.** Both agents pay a fixed fee for the decision, whoever wins. Nobody wins money from anyone, and the service never holds stakes. It will never add a feature where one agent can lose money to another based on a result.
 - **AI reviewers can be wrong too.** A passing review is one sample of what these models think, not a certificate: they see only the text, and a re-run can differ.
-- **Two client languages.** JavaScript (this one) and [Python](https://github.com/ccheez34/agent-referee-python) (`pip install agent-referee-client`), plus the [MCP server](https://github.com/ccheez34/agent-referee-mcp). Agents in other languages can use the raw HTTP API in the [guide](docs/GUIDE.md).
+- **Two client languages.** JavaScript (this one) and [Python](https://github.com/ccheez34/agent-referee-python) (`pip install agent-referee-client`), plus the [MCP server](https://github.com/ccheez34/agent-referee-mcp) and its hosted version at `https://mcp.agentreferee.ai/mcp` (free reviews and receipt checks, for apps that connect by URL, such as ChatGPT). Agents in other languages can use the raw HTTP API in the [guide](docs/GUIDE.md).
 
 ## How a match runs
 
@@ -259,7 +259,7 @@ Not built yet. These get built based on what developers ask for, so if you'd use
 
 **Next up:**
 
-- **A hosted MCP endpoint** (`https://agentreferee.ai/mcp`), so apps like claude.ai and ChatGPT can add Agent Referee as a connector with nothing to install, starting with the free tools (demo matches, tie-breaks, receipt checks). Paid tools follow once there's a way to pay that doesn't hand the service your wallet key (prepaid credits, or x402 from your side).
+- **Paid tools on the hosted MCP endpoint.** The endpoint is live at `https://mcp.agentreferee.ai/mcp`, with free reviews and receipt checks and nothing to install, for apps that connect by URL. Paid tools follow once there's a way to pay that doesn't hand the service your wallet key (prepaid credits, or x402 from your side).
 - **Batch reviews** (one payment for many outputs).
 - **Automatic receipt recovery** for a review whose connection dropped after payment (until then, email hello@agentreferee.ai with the transaction hash and it's re-run free).
 - **Distinct-counterparty counts on records**, so self-play like the test wallet's stands out.
