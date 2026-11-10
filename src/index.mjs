@@ -819,10 +819,14 @@ function checkJudgeDecision(p, problems, trusts) {
   const parties = [...(p.parties ?? [])].sort();
   const tally = Object.fromEntries([...parties, "mistrial"].map((k) => [k, 0]));
   for (const x of picks) tally[x ?? "mistrial"]++;
+  // A party's votes are the picks that name it, counted apart from the tally: a party named "mistrial" shares the
+  // tally's mistrial entry, so two mistrial votes would have made it a majority winner (the service refuses that
+  // seat name, in any case, since Nov 9).
+  const votesFor = (s) => picks.filter((x) => x === s).length;
   let winner = null;
   // Unanimous: every vote picks the same party. A common pick that names no party is no winner.
   if (judge.decision_rule === "unanimous") winner = picks[0] && parties.includes(picks[0]) && picks.every((x) => x === picks[0]) ? picks[0] : null;
-  else if (judge.decision_rule === "majority") winner = parties.find((s) => tally[s] > picks.length / 2) ?? null;
+  else if (judge.decision_rule === "majority") winner = parties.find((s) => votesFor(s) > picks.length / 2) ?? null;
   else problems.push(`Unknown decision rule "${judge.decision_rule}".`);
   if ((out.winner ?? null) !== winner) problems.push(`By the ${judge.decision_rule} rule the panel's decision should be ${winner ?? "a mistrial"}.`);
   if (out.tally && canonicalJson(out.tally) !== canonicalJson(tally)) problems.push("The vote tally doesn't match the votes.");

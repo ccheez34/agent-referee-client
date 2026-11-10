@@ -80,3 +80,15 @@ test('a score counts only from an own key: a criterion named "__proto__" with no
   review.votes[1].total = 42;
   assert.deepEqual((await verifyReviewOutcome(review)).problems, ["Vote 2's weighted total doesn't match its scores."]);
 });
+
+test('majority: mistrial votes never count for a party, even one named "mistrial"', async () => {
+  // The same hole 5.0 found in the service (Nov 9, 16:24): a party named "mistrial" shares the tally's mistrial
+  // entry, so two mistrial votes made it the winner. The service refuses that name since its fix; the check counts
+  // a party's own votes.
+  const tally = { a: 1, mistrial: 2 };
+  const twoMistrials = panelReceipt(["a", "mistrial"], "majority", [null, null, "a"], { winner: "mistrial", tally });
+  assert.deepEqual((await verifyOutcome(twoMistrials)).problems, ["By the majority rule the panel's decision should be a mistrial."]);
+  assert.deepEqual((await verifyOutcome(panelReceipt(["a", "mistrial"], "majority", [null, null, "a"], { winner: null, tally }))).problems, []);
+  // Two real votes for that party still make it the winner.
+  assert.deepEqual((await verifyOutcome(panelReceipt(["a", "mistrial"], "majority", ["mistrial", "mistrial", "a"], { winner: "mistrial", tally }))).problems, []);
+});
