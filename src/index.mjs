@@ -706,9 +706,13 @@ async function checkSettings(p, req, problems) {
   }
 }
 
-/** Weighted totals from 0-10 scores; the pick is the higher total (equal totals: no pick). Mirrors the service. */
+/**
+ * Weighted totals from 0-10 scores; the pick is the higher total (equal totals: no pick). Mirrors the service. The
+ * totals have no prototype, so every party keeps its own key: on a plain {}, totals["__proto__"] = 9 would set the
+ * prototype instead, and a party named "__proto__" lost its total.
+ */
 function criteriaPick(scores, criteria) {
-  const totals = {};
+  const totals = Object.create(null);
   for (const [party, s] of Object.entries(scores ?? {})) totals[party] = criteria.reduce((n, c) => n + c.weight * (s?.[c.name] ?? 0), 0);
   const ranked = Object.entries(totals).sort((a, b) => b[1] - a[1]);
   return { totals, pick: ranked.length >= 2 && ranked[0][1] !== ranked[1][1] ? ranked[0][0] : null };
@@ -808,7 +812,8 @@ function checkJudgeDecision(p, problems, trusts) {
   const tally = Object.fromEntries([...parties, "mistrial"].map((k) => [k, 0]));
   for (const x of picks) tally[x ?? "mistrial"]++;
   let winner = null;
-  if (judge.decision_rule === "unanimous") winner = picks[0] && picks.every((x) => x === picks[0]) ? picks[0] : null;
+  // Unanimous: every vote picks the same party. A common pick that names no party is no winner.
+  if (judge.decision_rule === "unanimous") winner = picks[0] && parties.includes(picks[0]) && picks.every((x) => x === picks[0]) ? picks[0] : null;
   else if (judge.decision_rule === "majority") winner = parties.find((s) => tally[s] > picks.length / 2) ?? null;
   else problems.push(`Unknown decision rule "${judge.decision_rule}".`);
   if ((out.winner ?? null) !== winner) problems.push(`By the ${judge.decision_rule} rule the panel's decision should be ${winner ?? "a mistrial"}.`);
