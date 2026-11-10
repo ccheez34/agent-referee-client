@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { verifyOutcome } from "../src/index.mjs";
+import { verifyOutcome, verifyReviewOutcome } from "../src/index.mjs";
 
 const fx = JSON.parse(readFileSync(new URL("./fixtures/receipts.json", import.meta.url), "utf8"));
 
@@ -53,4 +53,30 @@ test('criteria totals keep every party\'s own key, one named "__proto__" include
   const panel = panelReceipt(JSON.parse('["__proto__","b"]'), "majority", [null, null, null], JSON.parse('{"winner":"__proto__","criteria":[{"name":"price","weight":1}],"tally":{"__proto__":3,"b":0,"mistrial":0}}'));
   panel.outcome.votes = panel.outcome.votes.map((v) => ({ ...v, winner: "__proto__", scores: structuredClone(scores) }));
   assert.deepEqual((await verifyOutcome(panel)).problems, []);
+});
+
+test('a score counts only from an own key: a criterion named "__proto__" with no score counts 0, as the service counts it', async () => {
+  // Found by 5.0 (Nov 9, 16:24): s[c.name] for a criterion named "__proto__" read Object.prototype, every total became
+  // NaN (null in a receipt), and the first party by name won. Since its fix (deployed Nov 9) the service counts a score
+  // only from an own key, and an empty one as 0.
+  const criteria = '[{"name":"__proto__","weight":5},{"name":"price","weight":1}]';
+  const scores = '{"alpha":{"price":0},"beta":{"price":10}}';
+  const fixed = singleReceipt(["alpha", "beta"], JSON.parse(`{"winner":"beta","criteria":${criteria},"scores":${scores},"totals":{"alpha":0,"beta":10}}`));
+  assert.deepEqual((await verifyOutcome(fixed)).problems, []);
+  // An empty own score counts 0, as before (a receipt built in code can hold undefined; JSON can't).
+  const empty = singleReceipt(["alpha", "beta"], { ...JSON.parse(`{"winner":"beta","criteria":${criteria},"totals":{"alpha":0,"beta":10}}`), scores: { alpha: { price: undefined }, beta: { price: 10 } } });
+  assert.deepEqual((await verifyOutcome(empty)).problems, []);
+  // What the service signed before its fix: null totals and the first party by name. Now that is caught.
+  const old = singleReceipt(["alpha", "beta"], JSON.parse(`{"winner":"alpha","criteria":${criteria},"scores":${scores},"totals":{"alpha":null,"beta":null}}`));
+  assert.deepEqual((await verifyOutcome(old)).problems, [
+    "The criteria totals don't match the judge's scores and the agreed weights.",
+    "By the scores and agreed weights the winner should be beta.",
+  ]);
+  // A review vote's weighted total follows the same rule; an own "__proto__" score does count.
+  const review = structuredClone(fx.review_3);
+  review.criteria = JSON.parse(criteria);
+  review.votes = review.votes.map((v, i) => ({ ...v, ...JSON.parse(i === 0 ? '{"scores":{"__proto__":2,"price":10},"total":20}' : '{"scores":{"price":7},"total":7}') }));
+  assert.deepEqual((await verifyReviewOutcome(review)).problems, []);
+  review.votes[1].total = 42;
+  assert.deepEqual((await verifyReviewOutcome(review)).problems, ["Vote 2's weighted total doesn't match its scores."]);
 });

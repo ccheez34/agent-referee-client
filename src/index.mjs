@@ -707,13 +707,21 @@ async function checkSettings(p, req, problems) {
 }
 
 /**
+ * A score on one criterion, read only from an own key, as the service counts it: a criterion with no score, or an
+ * empty one, counts 0. Reading s[name] would also find the names every object inherits: for a criterion named
+ * "__proto__", it read Object.prototype, every total became NaN, and the first party by name won whatever the judges
+ * scored.
+ */
+const ownScore = (s, name) => (s != null && Object.hasOwn(s, name) ? (s[name] ?? 0) : 0);
+
+/**
  * Weighted totals from 0-10 scores; the pick is the higher total (equal totals: no pick). Mirrors the service. The
  * totals have no prototype, so every party keeps its own key: on a plain {}, totals["__proto__"] = 9 would set the
  * prototype instead, and a party named "__proto__" lost its total.
  */
 function criteriaPick(scores, criteria) {
   const totals = Object.create(null);
-  for (const [party, s] of Object.entries(scores ?? {})) totals[party] = criteria.reduce((n, c) => n + c.weight * (s?.[c.name] ?? 0), 0);
+  for (const [party, s] of Object.entries(scores ?? {})) totals[party] = criteria.reduce((n, c) => n + c.weight * ownScore(s, c.name), 0);
   const ranked = Object.entries(totals).sort((a, b) => b[1] - a[1]);
   return { totals, pick: ranked.length >= 2 && ranked[0][1] !== ranked[1][1] ? ranked[0][0] : null };
 }
@@ -908,7 +916,7 @@ export async function verifyReviewOutcome(receipt, opts = {}) {
     if (v.model !== models[i]) problems.push(`Vote ${i + 1} doesn't come from the committed reviewer (${models[i]}).`);
     if (!REVIEW_VERDICTS.includes(v.verdict)) problems.push(`Vote ${i + 1} has an unknown verdict.`);
     if (p.criteria?.length && v.scores) {
-      const total = p.criteria.reduce((n, c) => n + c.weight * (v.scores[c.name] ?? 0), 0);
+      const total = p.criteria.reduce((n, c) => n + c.weight * ownScore(v.scores, c.name), 0);
       if (v.total !== total) problems.push(`Vote ${i + 1}'s weighted total doesn't match its scores.`);
     }
   });
