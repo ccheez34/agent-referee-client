@@ -817,7 +817,9 @@ function checkJudgeDecision(p, problems, trusts) {
     return criteria?.length && v.scores ? criteriaPick(v.scores, criteria).pick : v.winner;
   });
   const parties = [...(p.parties ?? [])].sort();
-  const tally = Object.fromEntries([...parties, "mistrial"].map((k) => [k, 0]));
+  // The tally has no prototype, so every pick gets its own key: a pick that names no party counts as NaN and shows as a
+  // mismatch. On a plain {}, a pick of "__proto__" that names no party vanished from the tally instead.
+  const tally = Object.assign(Object.create(null), Object.fromEntries([...parties, "mistrial"].map((k) => [k, 0])));
   for (const x of picks) tally[x ?? "mistrial"]++;
   // A party's votes are the picks that name it, counted apart from the tally: a party named "mistrial" shares the
   // tally's mistrial entry, so two mistrial votes would have made it a majority winner (the service refuses that

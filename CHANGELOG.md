@@ -2,13 +2,15 @@
 
 ## Unreleased (branch judge-party-and-own-keys)
 
-- **Judge decisions are re-derived by the published rule in three more corners,** found in the team's checks
-  (Nov 4 to 9); a receipt that breaks one is reported like any other mismatch:
+- **Judge decisions are re-derived by the published rule in four more corners,** found in the team's checks
+  (Nov 4 to 10); a receipt that breaks one is reported like any other mismatch:
   - Under `unanimous`, a common pick that names no party is no winner.
   - Weighted totals keep every party's own key (one named `__proto__` included), and a score counts only from an own
     key: a criterion with no score, or an empty one, counts 0, as the service counts it since Nov 9. Review votes'
     weighted totals follow the same rule.
   - Under `majority`, mistrial votes never count for a party, even one named `mistrial`.
+  - A vote for a name that isn't a party makes the tally a mismatch, `__proto__` included (that vote used to vanish
+    from the tally).
 
 ## 0.10.0 (2026-10-29)
 

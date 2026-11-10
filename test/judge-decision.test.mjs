@@ -92,3 +92,12 @@ test('majority: mistrial votes never count for a party, even one named "mistrial
   // Two real votes for that party still make it the winner.
   assert.deepEqual((await verifyOutcome(panelReceipt(["a", "mistrial"], "majority", ["mistrial", "mistrial", "a"], { winner: "mistrial", tally }))).problems, []);
 });
+
+test('the tally gives every pick its own key: a vote for a non-party, "__proto__" included, is a mismatch', async () => {
+  // On a plain {}, tally["__proto__"]++ read the inherited accessor and set nothing, so that vote vanished and a tally
+  // without it checked clean; a vote for "constructor" or "zed" was caught. The Python client caught all three.
+  for (const name of ["__proto__", "constructor", "zed"]) {
+    const p = panelReceipt(["a", "b"], "majority", ["a", "a", name], { winner: "a", tally: { a: 2, b: 0, mistrial: 0 } });
+    assert.deepEqual((await verifyOutcome(p)).problems, ["The vote tally doesn't match the votes."], name);
+  }
+});
