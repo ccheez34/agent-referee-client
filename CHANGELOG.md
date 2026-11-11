@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (branch judge-party-and-own-keys)
+## Unreleased (on main from Nov 10; not yet in a release)
 
 - **Judge decisions are re-derived by the published rule in four more corners,** found in the team's checks
   (Nov 4 to 10); a receipt that breaks one is reported like any other mismatch:
@@ -11,6 +11,12 @@
   - Under `majority`, mistrial votes never count for a party, even one named `mistrial`.
   - A vote for a name that isn't a party makes the tally a mismatch, `__proto__` included (that vote used to vanish
     from the tally).
+- **The random tiers read a seat's entry only from an own key,** as do the signed acknowledgments' checks
+  (`findContradictions`). A seat named after something every object has (`toString`) used to read as present when its
+  entry was missing: an rps round where it never revealed was scored for the other seat, and a weighted match didn't
+  report its missing reveal. The service refuses such seat names since Nov 9.
+- **Tests:** the cross-language match vectors (51 receipts of every match tier, from agent-referee-python) now run here
+  too, with and without the seat.
 
 ## 0.10.0 (2026-10-29)
 
