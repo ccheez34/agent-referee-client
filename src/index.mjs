@@ -1133,7 +1133,9 @@ export async function verifySeries(receipts) {
       const t = structuredClone(before);
       t.games++;
       const w = p.outcome?.winner;
-      if (w && (p.parties ?? []).includes(w)) t.wins[w] = (t.wins[w] ?? 0) + 1;
+      // An own read and an own-key write: on a plain object, a party named "toString" read the inherited function, and one
+      // named "__proto__" set the prototype instead of a key.
+      if (w && (p.parties ?? []).includes(w)) Object.defineProperty(t.wins, w, { value: (own(t.wins, w) ?? 0) + 1, enumerable: true, writable: true, configurable: true });
       else t.no_result++;
       if (s?.tally && canonicalJson(s.tally) !== canonicalJson(t)) problems.push(`Game ${game}'s tally doesn't add up.`);
       tally = t;

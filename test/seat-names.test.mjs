@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { findContradictions, verifyOutcome } from "../src/index.mjs";
+import { canonicalJson, findContradictions, sha256Hex, verifyOutcome, verifySeries } from "../src/index.mjs";
 
 const C = JSON.parse(readFileSync(new URL("./fixtures/seat-name-cases.json", import.meta.url), "utf8"));
 const commit = (s) => {
@@ -37,4 +37,20 @@ test("rps: a round where one seat never revealed isn't scored, whatever that sea
   // a receipt naming it the winner checked clean.
   const rps = C.cases.find((c) => c.name === "rps, toString never revealed");
   assert.deepEqual((await verifyOutcome(fill(rps.payload))).problems, ["Winner should be nobody."]);
+});
+
+test("verifySeries: a series given from the middle counts a win for a party named toString or __proto__", async () => {
+  // Found by 2.0 in its read of own-key-random-tiers (2.0's 0847): t.wins["toString"] read the inherited function, so
+  // the tally held "function toString() { [native code] }1" and game 3's signed tally looked wrong; "__proto__" lost
+  // the win. The Python client counts both as 1, as here.
+  for (const name of ["toString", "__proto__", "alpha"]) {
+    const parties = [name, "zed"];
+    const g2 = { tier: "weighted", match_id: "s-g2", parties, outcome: { winner: "zed" },
+      series: { series_id: "s-g1", game: 2, previous_match_id: "s-g1", previous_receipt_sha256: "0".repeat(64), tally: { games: 2, wins: { zed: 1 }, no_result: 1 } } };
+    const g3 = { tier: "weighted", match_id: "s-g3", parties, outcome: { winner: name },
+      series: { series_id: "s-g1", game: 3, previous_match_id: "s-g2", previous_receipt_sha256: await sha256Hex(canonicalJson(g2)), tally: JSON.parse(`{"games":3,"wins":{"zed":1,${JSON.stringify(name)}:1},"no_result":1}`) } };
+    const r = await verifySeries(JSON.parse(JSON.stringify([g2, g3])));
+    assert.deepEqual(r.problems, [], name);
+    assert.equal(canonicalJson(r.tally), canonicalJson(JSON.parse(`{"games":3,"wins":{"zed":1,${JSON.stringify(name)}:1},"no_result":1}`)), name);
+  }
 });
