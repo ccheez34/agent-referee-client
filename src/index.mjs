@@ -707,6 +707,12 @@ async function checkSettings(p, req, problems) {
 }
 
 /**
+ * o[k] only when k is o's own key, else undefined. A seat or party name in a receipt can be any text, "toString" or
+ * "__proto__" included, and reading o[name] would find what every object inherits: a function that reads as present.
+ */
+const own = (o, k) => (o !== null && typeof o === "object" && Object.hasOwn(o, k) ? o[k] : undefined);
+
+/**
  * A score on one criterion, read only from an own key, as the service counts it: a criterion with no score, or an
  * empty one, counts 0. Reading s[name] would also find the names every object inherits: for a criterion named
  * "__proto__", it read Object.prototype, every total became NaN, and the first party by name won whatever the judges
@@ -998,8 +1004,8 @@ export async function verifyOutcome(receipt, opts = {}) {
     for (const m of me.mine ?? []) {
       const r = roundsOf.find((x) => x.round === (m.round ?? 1)) ?? (roundsOf.length === 1 ? roundsOf[0] : undefined);
       if (!r) { problems.push(`Round ${m.round}: missing from the receipt.`); continue; }
-      const c = r.commits?.[me.seat];
-      const v = r.reveals?.[me.seat];
+      const c = own(r.commits, me.seat);
+      const v = own(r.reveals, me.seat);
       if (c !== undefined && c !== m.commitment) problems.push(`Round ${m.round}: your commitment was replaced.`);
       if (v && (v.value !== m.value || v.nonce !== m.nonce)) problems.push(`Round ${m.round}: your reveal was replaced.`);
       if (c === undefined && !out.by_forfeit) problems.push(`Round ${m.round}: your commitment is missing.`);
@@ -1011,8 +1017,9 @@ export async function verifyOutcome(receipt, opts = {}) {
 
   const checkReveals = async (commits = {}, reveals = {}, label = "") => {
     for (const [seat, r] of Object.entries(reveals)) {
-      if (!commits[seat]) problems.push(`${label}${seat} revealed without a commitment.`);
-      else if ((await sha256Hex(`${r.value}:${r.nonce}`)) !== commits[seat]) problems.push(`${label}${seat}'s reveal doesn't match its commitment.`);
+      const c = own(commits, seat);
+      if (!c) problems.push(`${label}${seat} revealed without a commitment.`);
+      else if ((await sha256Hex(`${r.value}:${r.nonce}`)) !== c) problems.push(`${label}${seat}'s reveal doesn't match its commitment.`);
     }
   };
   const combined = async (seeds) => {
@@ -1043,8 +1050,9 @@ export async function verifyOutcome(receipt, opts = {}) {
     const wins = { [a]: 0, [b]: 0 };
     for (const r of proof.rounds ?? []) {
       await checkReveals(r.commits, r.reveals, `Round ${r.round}: `);
-      if (r.reveals?.[a] && r.reveals?.[b]) {
-        const va = r.reveals[a].value, vb = r.reveals[b].value;
+      const ra = own(r.reveals, a), rb = own(r.reveals, b);
+      if (ra && rb) {
+        const va = ra.value, vb = rb.value;
         const expected = va === vb ? null : RPS_BEATS[va] === vb ? a : b;
         if ((r.winner ?? null) !== expected) problems.push(`Round ${r.round}: winner should be ${expected ?? "a tie"}.`);
         if (expected) wins[expected]++;
@@ -1065,7 +1073,7 @@ export async function verifyOutcome(receipt, opts = {}) {
     if (out.by_forfeit) return done(false);
     const weights = out.weights ?? {};
     const seats = Object.keys(weights).sort();
-    for (const s of seats) if (!seeds[s]) problems.push(`${s} has no reveal.`);
+    for (const s of seats) if (!own(seeds, s)) problems.push(`${s} has no reveal.`);
     const total = seats.reduce((n, s) => n + weights[s], 0);
     let ticket = Number((await combined(seeds)) % BigInt(total));
     let winner = seats[seats.length - 1];
@@ -1155,10 +1163,10 @@ export function findContradictions(receipt, acks = []) {
     const flag = (reason) => out.push({ reason: `Signed ${a.step} acknowledgment contradicts the receipt: ${reason}`, ack });
     if (a.step === "commit" || a.step === "reveal") {
       const r = roundFor(a.round);
-      const c = r?.commits?.[seat];
+      const c = own(r?.commits, seat);
       if (c !== a.commitment) flag(`${seat}'s round ${a.round} commitment ${c ? "was changed" : "is missing"}.`);
       if (a.step === "reveal") {
-        const v = r?.reveals?.[seat];
+        const v = own(r?.reveals, seat);
         if (!v || v.value !== a.value || v.nonce !== a.nonce) flag(`${seat}'s round ${a.round} reveal ${v ? "was changed" : "is missing"}.`);
         if (forfeited.includes(seat)) flag(`${seat} is listed as forfeiting after the service accepted its reveal.`);
       }
@@ -1166,15 +1174,15 @@ export function findContradictions(receipt, acks = []) {
       if (forfeited.includes(seat)) flag(`${seat} is listed as forfeiting after the service accepted its submission.`);
       if (a.receipt_format === JUDGE_FORMAT || p.receipt_format === JUDGE_FORMAT) {
         // Multi-part judge tiers: the ack names the side's pieces; the receipt must show exactly those.
-        const recs = proof.pieces?.[seat];
+        const recs = own(proof.pieces, seat);
         if (recs == null) flag(`${seat}'s accepted pieces are missing from the receipt.`);
-        else if (canonicalJson(recs) !== canonicalJson(a.pieces ?? null) || proof.pieces_sha256?.[seat] !== a.pieces_sha256) flag(`${seat}'s submission was changed.`);
+        else if (canonicalJson(recs) !== canonicalJson(a.pieces ?? null) || own(proof.pieces_sha256, seat) !== a.pieces_sha256) flag(`${seat}'s submission was changed.`);
       } else {
-        const h = proof.submission_sha256?.[seat];
+        const h = own(proof.submission_sha256, seat);
         if (h && h !== a.position_sha256) flag(`${seat}'s submission was changed.`);
       }
     } else if (a.step === "join") {
-      const paid = p.paid_by?.[seat];
+      const paid = own(p.paid_by, seat);
       if (paid && a.paid_by && paid !== a.paid_by) flag(`${seat}'s paying wallet was changed.`);
     }
   }

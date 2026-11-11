@@ -1,0 +1,406 @@
+{
+ "note": "Receipts with seat names an object inherits (toString, constructor), unsigned: verifyOutcome and findContradictions don't check signatures. \"@commit:VALUE:NONCE\" stands for the sha256 of \"VALUE:NONCE\". Each expect is the Python client's answer (agent-referee-python main 5961a07, Nov 11, 2026), which reads only a dict's own keys.",
+ "cases": [
+  {
+   "name": "weighted, toString never revealed",
+   "kind": "outcome",
+   "payload": {
+    "tier": "weighted",
+    "match_id": "m1",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "weights": {
+      "toString": 1,
+      "b": 1
+     },
+     "winner": "b"
+    },
+    "proof": {
+     "commits": {
+      "b": "@commit:b-seed:n1"
+     },
+     "reveals": {
+      "b": {
+       "value": "b-seed",
+       "nonce": "n1"
+      }
+     }
+    }
+   },
+   "expect": [
+    "toString has no reveal.",
+    "Winner should be toString."
+   ]
+  },
+  {
+   "name": "draw, a reveal from toString with no commitment",
+   "kind": "outcome",
+   "payload": {
+    "tier": "draw",
+    "match_id": "m2",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "options": [
+      "A",
+      "B"
+     ],
+     "picked_index": 0,
+     "picked_option": "A"
+    },
+    "proof": {
+     "commits": {
+      "b": "@commit:b-seed:n1"
+     },
+     "reveals": {
+      "b": {
+       "value": "b-seed",
+       "nonce": "n1"
+      },
+      "toString": {
+       "value": "t",
+       "nonce": "n2"
+      }
+     }
+    }
+   },
+   "expect": [
+    "toString revealed without a commitment."
+   ]
+  },
+  {
+   "name": "rps, toString never revealed",
+   "kind": "outcome",
+   "payload": {
+    "tier": "rps",
+    "match_id": "m3",
+    "parties": [
+     "toString",
+     "zed"
+    ],
+    "outcome": {
+     "winner": "zed"
+    },
+    "proof": {
+     "rounds": [
+      {
+       "round": 1,
+       "commits": {
+        "zed": "@commit:rock:n3"
+       },
+       "reveals": {
+        "zed": {
+         "value": "rock",
+         "nonce": "n3"
+        }
+       },
+       "winner": "zed"
+      }
+     ]
+    }
+   },
+   "expect": [
+    "Winner should be nobody."
+   ]
+  },
+  {
+   "name": "contradictions, toString's commitment missing",
+   "kind": "contradictions",
+   "payload": {
+    "tier": "weighted",
+    "match_id": "m4",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "weights": {
+      "toString": 1,
+      "b": 1
+     },
+     "winner": "b"
+    },
+    "proof": {
+     "commits": {
+      "b": "@commit:b-seed:n1"
+     },
+     "reveals": {
+      "b": {
+       "value": "b-seed",
+       "nonce": "n1"
+      }
+     }
+    }
+   },
+   "acks": [
+    {
+     "payload": {
+      "type": "step-ack",
+      "match_id": "m4",
+      "seat": "toString",
+      "step": "commit",
+      "round": 1,
+      "commitment": "@commit:t:n2"
+     }
+    }
+   ],
+   "expect": [
+    "Signed commit acknowledgment contradicts the receipt: toString's round 1 commitment is missing."
+   ]
+  },
+  {
+   "name": "contradictions, an honest receipt with seat constructor",
+   "kind": "contradictions",
+   "payload": {
+    "tier": "weighted",
+    "match_id": "m5",
+    "parties": [
+     "constructor",
+     "b"
+    ],
+    "outcome": {
+     "weights": {
+      "constructor": 1,
+      "b": 1
+     },
+     "winner": "b"
+    },
+    "proof": {
+     "commits": {
+      "constructor": "@commit:c:n5",
+      "b": "@commit:b-seed:n1"
+     },
+     "reveals": {
+      "constructor": {
+       "value": "c",
+       "nonce": "n5"
+      },
+      "b": {
+       "value": "b-seed",
+       "nonce": "n1"
+      }
+     }
+    }
+   },
+   "acks": [
+    {
+     "payload": {
+      "type": "step-ack",
+      "match_id": "m5",
+      "seat": "constructor",
+      "step": "reveal",
+      "round": 1,
+      "commitment": "@commit:c:n5",
+      "value": "c",
+      "nonce": "n5"
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "contradictions, toString's submission not in the receipt",
+   "kind": "contradictions",
+   "payload": {
+    "tier": "judge-3",
+    "match_id": "m6",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "winner": "b"
+    },
+    "proof": {
+     "submission_sha256": {
+      "b": "@commit:pos-b:x"
+     }
+    }
+   },
+   "acks": [
+    {
+     "payload": {
+      "type": "step-ack",
+      "match_id": "m6",
+      "seat": "toString",
+      "step": "submit",
+      "position_sha256": "@commit:pos-t:x"
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "contradictions, toString's paying wallet not in the receipt",
+   "kind": "contradictions",
+   "payload": {
+    "tier": "judge-3",
+    "match_id": "m7",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "winner": "b"
+    },
+    "proof": {},
+    "paid_by": {
+     "b": "0xabc"
+    }
+   },
+   "acks": [
+    {
+     "payload": {
+      "type": "step-ack",
+      "match_id": "m7",
+      "seat": "toString",
+      "step": "join",
+      "paid_by": "0xdef"
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "contradictions, toString's accepted pieces missing (multi-part)",
+   "kind": "contradictions",
+   "payload": {
+    "tier": "judge-3x2",
+    "receipt_format": "judge-multi-v1",
+    "match_id": "m8",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "winner": "b"
+    },
+    "proof": {
+     "pieces": {
+      "b": []
+     },
+     "pieces_sha256": {
+      "b": "x"
+     }
+    }
+   },
+   "acks": [
+    {
+     "payload": {
+      "type": "step-ack",
+      "match_id": "m8",
+      "seat": "toString",
+      "step": "submit",
+      "receipt_format": "judge-multi-v1",
+      "pieces": [],
+      "pieces_sha256": "y"
+     }
+    }
+   ],
+   "expect": [
+    "Signed submit acknowledgment contradicts the receipt: toString's accepted pieces are missing from the receipt."
+   ]
+  },
+  {
+   "name": "contradictions, toString's reveal missing",
+   "kind": "contradictions",
+   "payload": {
+    "tier": "weighted",
+    "match_id": "m9",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "weights": {
+      "toString": 1,
+      "b": 1
+     },
+     "winner": "b"
+    },
+    "proof": {
+     "commits": {
+      "toString": "@commit:t:n2",
+      "b": "@commit:b-seed:n1"
+     },
+     "reveals": {
+      "b": {
+       "value": "b-seed",
+       "nonce": "n1"
+      }
+     }
+    }
+   },
+   "acks": [
+    {
+     "payload": {
+      "type": "step-ack",
+      "match_id": "m9",
+      "seat": "toString",
+      "step": "reveal",
+      "round": 1,
+      "commitment": "@commit:t:n2",
+      "value": "t",
+      "nonce": "n2"
+     }
+    }
+   ],
+   "expect": [
+    "Signed reveal acknowledgment contradicts the receipt: toString's round 1 reveal is missing."
+   ]
+  },
+  {
+   "name": "the seat toString's own commitment missing",
+   "kind": "outcome_with_seat",
+   "payload": {
+    "tier": "weighted",
+    "match_id": "m10",
+    "parties": [
+     "toString",
+     "b"
+    ],
+    "outcome": {
+     "weights": {
+      "toString": 1,
+      "b": 1
+     },
+     "winner": "b"
+    },
+    "proof": {
+     "commits": {
+      "b": "@commit:b-seed:n1"
+     },
+     "reveals": {
+      "b": {
+       "value": "b-seed",
+       "nonce": "n1"
+      }
+     }
+    }
+   },
+   "seat": {
+    "matchId": "m10",
+    "seat": "toString",
+    "mine": [
+     {
+      "round": 1,
+      "commitment": "@commit:t:n2",
+      "value": "t",
+      "nonce": "n2"
+     }
+    ],
+    "acks": []
+   },
+   "expect": [
+    "Round 1: your commitment is missing.",
+    "Don't accept this result. Keep this signed receipt and seat.mine (your seed and nonce): the receipt is the service's signed claim, and your inputs show it differs from what you sent.",
+    "toString has no reveal."
+   ]
+  }
+ ]
+}
