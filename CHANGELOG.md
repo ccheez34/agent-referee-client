@@ -14,9 +14,10 @@
 - **The random tiers read a seat's entry only from an own key,** as do the signed acknowledgments' checks
   (`findContradictions`). A seat named after something every object has (`toString`) used to read as present when its
   entry was missing: an rps round where it never revealed was scored for the other seat, and a weighted match didn't
-  report its missing reveal. The service refuses such seat names since Nov 9.
-- **Tests:** the cross-language match vectors (51 receipts of every match tier, from agent-referee-python) now run here
-  too, with and without the seat.
+  report its missing reveal. `verifySeries` counts a win for such a party correctly too. The service refuses such seat
+  names since Nov 9.
+- **Tests:** the cross-language vectors from agent-referee-python now run here too: 51 match receipts of every tier
+  (with and without the seat), 6 series and 27 reviews.
 
 ## 0.10.0 (2026-10-29)
 
