@@ -6,7 +6,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { findContradictions, verifyOutcome, verifySignature } from "../src/index.mjs";
+import { canonicalJson, findContradictions, verifyOutcome, verifyReviewOutcome, verifySeries, verifySignature } from "../src/index.mjs";
 
 const V = JSON.parse(readFileSync(new URL("./fixtures/match-vectors.json", import.meta.url), "utf8"));
 
@@ -27,5 +27,24 @@ test("every match vector gives the same answer as before, with and without the s
       same(await verifyOutcome(c.receipt, { seat: c.seat }), c.with_seat, `${c.name} (seat)`);
       assert.deepEqual(findContradictions(c.receipt, c.seat.acks).map((e) => e.reason), c.contradictions, `${c.name}: contradictions`);
     }
+  }
+});
+
+test("every series vector gives the same answer as before", async () => {
+  assert.equal(V.series.length, 6);
+  for (const c of V.series) {
+    const r = await verifySeries(c.receipts);
+    assert.equal(r.ok, c.expected.ok, `${c.name}: ok`);
+    assert.deepEqual(r.problems, c.expected.problems, `${c.name}: problems`);
+    assert.equal(canonicalJson(r.tally), canonicalJson(c.expected.tally), `${c.name}: tally`);
+  }
+});
+
+test("every review vector gives the same answer as before", async () => {
+  assert.ok(V.reviews.length > 0);
+  for (const c of V.reviews) {
+    assert.equal(await verifySignature(c.receipt, [V.review_public_key]), c.signed, `${c.name}: signed`);
+    const r = await verifyReviewOutcome(c.receipt, c.opts);
+    same(r, c.expected, c.name);
   }
 });
