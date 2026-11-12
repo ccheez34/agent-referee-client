@@ -1,6 +1,7 @@
 # Runs the whole test suite (npm test: node --test) on Linux and Windows with Node 22, at every push and pull request.
 # The client has no dependencies to install. Nothing here spends money or needs a secret. Keep the job's name ("test")
 # stable: required checks, once he sets them, name it.
+# With the matrix, GitHub names the checks "test (ubuntu-latest)" and "test (windows-latest)": required checks name those two.
 name: tests
 
 on:
