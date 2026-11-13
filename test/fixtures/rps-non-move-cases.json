@@ -1,0 +1,197 @@
+{
+  "about": "A round where a reveal isn't rock, paper or scissors: each such seat is named and the round isn't scored. Shared by agent-referee-client (test/fixtures) and agent-referee-python (tests); \"@commit:<value>:<nonce>\" stands for sha256 of \"<value>:<nonce>\".",
+  "cases": [
+    {
+      "name": "rps, y wins with lizard",
+      "payload": {
+        "tier": "rps",
+        "match_id": "m1",
+        "parties": [
+          "x",
+          "y"
+        ],
+        "outcome": {
+          "winner": "y"
+        },
+        "proof": {
+          "rounds": [
+            {
+              "round": 1,
+              "commits": {
+                "x": "@commit:rock:n1x",
+                "y": "@commit:lizard:n1y"
+              },
+              "reveals": {
+                "x": {
+                  "value": "rock",
+                  "nonce": "n1x"
+                },
+                "y": {
+                  "value": "lizard",
+                  "nonce": "n1y"
+                }
+              },
+              "winner": "y"
+            }
+          ]
+        }
+      },
+      "expect": [
+        "Round 1: y revealed something that isn't rock, paper or scissors.",
+        "Winner should be nobody."
+      ]
+    },
+    {
+      "name": "rps, both non-moves (Rock, toString), no winner claimed",
+      "payload": {
+        "tier": "rps",
+        "match_id": "m2",
+        "parties": [
+          "x",
+          "y"
+        ],
+        "outcome": {
+          "winner": null
+        },
+        "proof": {
+          "rounds": [
+            {
+              "round": 1,
+              "commits": {
+                "x": "@commit:Rock:n1x",
+                "y": "@commit:toString:n1y"
+              },
+              "reveals": {
+                "x": {
+                  "value": "Rock",
+                  "nonce": "n1x"
+                },
+                "y": {
+                  "value": "toString",
+                  "nonce": "n1y"
+                }
+              },
+              "winner": "x"
+            }
+          ]
+        }
+      },
+      "expect": [
+        "Round 1: x revealed something that isn't rock, paper or scissors.",
+        "Round 1: y revealed something that isn't rock, paper or scissors."
+      ]
+    },
+    {
+      "name": "rps-bo3, a non-move in round 2, x wins rounds 1 and 3",
+      "payload": {
+        "tier": "rps-bo3",
+        "match_id": "m3",
+        "parties": [
+          "x",
+          "y"
+        ],
+        "outcome": {
+          "winner": "x"
+        },
+        "proof": {
+          "rounds": [
+            {
+              "round": 1,
+              "commits": {
+                "x": "@commit:rock:n1x",
+                "y": "@commit:scissors:n1y"
+              },
+              "reveals": {
+                "x": {
+                  "value": "rock",
+                  "nonce": "n1x"
+                },
+                "y": {
+                  "value": "scissors",
+                  "nonce": "n1y"
+                }
+              },
+              "winner": "x"
+            },
+            {
+              "round": 2,
+              "commits": {
+                "x": "@commit:paper:n2x",
+                "y": "@commit:spock:n2y"
+              },
+              "reveals": {
+                "x": {
+                  "value": "paper",
+                  "nonce": "n2x"
+                },
+                "y": {
+                  "value": "spock",
+                  "nonce": "n2y"
+                }
+              },
+              "winner": "y"
+            },
+            {
+              "round": 3,
+              "commits": {
+                "x": "@commit:scissors:n3x",
+                "y": "@commit:paper:n3y"
+              },
+              "reveals": {
+                "x": {
+                  "value": "scissors",
+                  "nonce": "n3x"
+                },
+                "y": {
+                  "value": "paper",
+                  "nonce": "n3y"
+                }
+              },
+              "winner": "x"
+            }
+          ]
+        }
+      },
+      "expect": [
+        "Round 2: y revealed something that isn't rock, paper or scissors."
+      ]
+    },
+    {
+      "name": "rps, valid moves still check clean",
+      "payload": {
+        "tier": "rps",
+        "match_id": "m4",
+        "parties": [
+          "x",
+          "y"
+        ],
+        "outcome": {
+          "winner": "y"
+        },
+        "proof": {
+          "rounds": [
+            {
+              "round": 1,
+              "commits": {
+                "x": "@commit:rock:n1x",
+                "y": "@commit:paper:n1y"
+              },
+              "reveals": {
+                "x": {
+                  "value": "rock",
+                  "nonce": "n1x"
+                },
+                "y": {
+                  "value": "paper",
+                  "nonce": "n1y"
+                }
+              },
+              "winner": "y"
+            }
+          ]
+        }
+      },
+      "expect": []
+    }
+  ]
+}

@@ -2,6 +2,10 @@
 
 ## Unreleased (on main from Nov 10; not yet in a release)
 
+- **An rps round with a reveal that isn't rock, paper or scissors** ("lizard", "Rock") now names that seat and
+  isn't scored; it used to go to the second party, so a receipt where that party won with a non-move checked clean.
+  The service refuses non-moves at reveal, so only a fault in the service could sign one. Both clients give the
+  same answers, from the same cases.
 - **Judge decisions are re-derived by the published rule in four more corners,** found in the team's checks
   (Nov 4 to 10); a receipt that breaks one is reported like any other mismatch:
   - Under `unanimous`, a common pick that names no party is no winner.

@@ -1053,6 +1053,11 @@ export async function verifyOutcome(receipt, opts = {}) {
       const ra = own(r.reveals, a), rb = own(r.reveals, b);
       if (ra && rb) {
         const va = ra.value, vb = rb.value;
+        const nonMove = [[a, va], [b, vb]].filter(([, v]) => typeof v !== "string" || !Object.hasOwn(RPS_BEATS, v));
+        if (nonMove.length) {
+          for (const [s] of nonMove) problems.push(`Round ${r.round}: ${s} revealed something that isn't rock, paper or scissors.`);
+          continue;
+        }
         const expected = va === vb ? null : RPS_BEATS[va] === vb ? a : b;
         if ((r.winner ?? null) !== expected) problems.push(`Round ${r.round}: winner should be ${expected ?? "a tie"}.`);
         if (expected) wins[expected]++;
